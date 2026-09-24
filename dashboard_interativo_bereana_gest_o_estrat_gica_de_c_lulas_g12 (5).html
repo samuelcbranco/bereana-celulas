@@ -1,0 +1,3236 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Bereana • Gestão Estratégica de Células G12</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            bereana: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .dark .glass-card {
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.4);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.6);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200 antialiased flex flex-col justify-between">
+
+  <!-- TOP ADMIN BAR (Ativa quando logado como bereana) -->
+  <div id="admin-top-bar" class="hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-b border-indigo-500/40 text-white px-4 py-2 sticky top-0 z-50 shadow-xl text-xs">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="font-black text-indigo-300 tracking-wide uppercase text-[11px]">Área de Edição Ativa</span>
+        <span class="text-slate-400 font-medium">• Usuário: <strong class="text-white">bereana</strong></span>
+        <span class="hidden sm:inline text-[10px] px-2 py-0.5 rounded-full bg-indigo-900 text-indigo-300 border border-indigo-700">Edição e Banco Liberados</span>
+      </div>
+
+      <!-- Admin Quick Controls -->
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="openNewLeaderModal()" class="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-user-plus text-[10px]"></i>
+          <span>+ Nova Descendência</span>
+        </button>
+        <button onclick="exportDataJSON()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold border border-slate-700 transition flex items-center gap-1.5" title="Baixar cópia de segurança em JSON">
+          <i class="fa-solid fa-download text-[10px]"></i>
+          <span class="hidden sm:inline">Backup</span>
+        </button>
+        <label class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold border border-slate-700 cursor-pointer transition flex items-center gap-1.5" title="Carregar arquivo JSON com os dados salvos">
+          <i class="fa-solid fa-upload text-[10px]"></i>
+          <span class="hidden sm:inline">Restaurar</span>
+          <input type="file" id="import-json-file" accept=".json" onchange="importDataJSON(event)" class="hidden">
+        </label>
+        <button onclick="resetDefaultData()" class="px-2.5 py-1 rounded-lg bg-amber-950/60 hover:bg-amber-900 text-amber-300 font-semibold border border-amber-800/60 transition flex items-center gap-1.5" title="Restaura os dados originais das 24 fichas">
+          <i class="fa-solid fa-rotate-left text-[10px]"></i>
+          <span class="hidden md:inline">Restaurar Originais</span>
+        </button>
+        <button onclick="handleAdminLogout()" class="px-2.5 py-1 rounded-lg bg-rose-950/70 hover:bg-rose-900 text-rose-200 font-bold border border-rose-800 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-right-from-bracket text-[10px]"></i>
+          <span>Sair</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP HEADER & BRANDING -->
+  <header class="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 sm:h-20 gap-4">
+        
+        <!-- Logo & Titular -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-indigo-700 via-indigo-600 to-sky-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/25 font-black text-xl">
+            <i class="fa-solid fa-fire"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="font-black text-base sm:text-xl text-slate-900 dark:text-white tracking-tight">IBN BEREANA</h1>
+              <span class="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">Visão G12</span>
+            </div>
+            <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:block">Gestão Estratégica das 24 Descendências • Relatório e Metas</p>
+          </div>
+        </div>
+
+        <!-- Top Right Stats & Actions -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <!-- Total Células Badge -->
+          <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="font-bold text-slate-700 dark:text-slate-300"><span id="top-counter-celulas">91</span> Células Ativas</span>
+            <span class="text-slate-400">•</span>
+            <span class="font-bold text-indigo-600 dark:text-indigo-400"><span id="top-counter-vidas">663</span> Discípulos</span>
+          </div>
+
+          <!-- Admin Access Button -->
+          <button onclick="toggleAdminModal()" id="btn-admin-access" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 shadow-md shadow-indigo-600/30 transition">
+            <i class="fa-solid fa-lock" id="btn-admin-icon"></i>
+            <span id="btn-admin-label">Acesso Admin</span>
+          </button>
+
+          <!-- Dark Mode Toggle -->
+          <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Alternar Modo Escuro">
+            <i class="fa-solid fa-moon dark:hidden"></i>
+            <i class="fa-solid fa-sun hidden dark:inline"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Navigation Tabs Bar -->
+      <nav class="flex space-x-1 sm:space-x-3 overflow-x-auto pb-1 text-xs sm:text-sm font-bold border-t border-slate-100 dark:border-slate-800/60 no-scrollbar">
+        <button onclick="switchTab('visao-geral')" id="nav-visao-geral" class="tab-btn px-3 py-3 border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 flex items-center gap-2 whitespace-nowrap transition">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Visão Geral</span>
+        </button>
+        <button onclick="switchTab('lideres')" id="nav-lideres" class="tab-btn px-3 py-3 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition">
+          <i class="fa-solid fa-users"></i>
+          <span>24 Líderes & Células</span>
+        </button>
+        <button onclick="switchTab('triade')" id="nav-triade" class="tab-btn px-3 py-3 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition">
+          <i class="fa-solid fa-users-gear"></i>
+          <span>Tríade & Liderança</span>
+        </button>
+        <button onclick="switchTab('diagnostico')" id="nav-diagnostico" class="tab-btn px-3 py-3 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition">
+          <i class="fa-solid fa-notes-medical"></i>
+          <span>Diagnóstico Pastoral</span>
+        </button>
+        <button onclick="switchTab('planejamento')" id="nav-planejamento" class="tab-btn px-3 py-3 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition">
+          <i class="fa-solid fa-bullseye"></i>
+          <span>Planejamento 2027 & Metas</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+
+    <!-- ================================================================= -->
+    <!-- TAB 1: VISÃO GERAL & MACROINDICADORES -->
+    <!-- ================================================================= -->
+    <section id="tab-visao-geral" class="tab-content space-y-6">
+      
+      <!-- Welcome & Status Header -->
+      <div class="bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-xl border border-slate-800">
+        <div class="absolute -right-10 -bottom-10 w-60 h-60 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute left-1/3 -top-10 w-72 h-72 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 mb-2">
+              <i class="fa-solid fa-church"></i>
+              Igreja Batista Nacional Bereana • Secretaria de Células
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black tracking-tight">Painel Estratégico das Células Bereana</h2>
+            <p class="text-xs sm:text-sm text-slate-300 max-w-2xl mt-1 leading-relaxed">
+              Consolidação analítica dos relatórios manuscritos oficiais com <strong>14 líderes físicos auditados</strong> (Jetiel, Walcidio, Elber, Otacília, Érison, Anderson, Apollo, Marta, Ana Karoline, Carmela, Bruna, Elizabete, Francisca e Francinete).
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="switchTab('lideres')" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
+              <i class="fa-solid fa-list-check"></i>
+              <span>Ver 24 Fichas</span>
+            </button>
+            <button onclick="switchTab('planejamento')" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 transition flex items-center gap-2">
+              <i class="fa-solid fa-bullseye"></i>
+              <span>Metas 2027</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5 KPI Cards Row -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mt-6 pt-6 border-t border-white/10">
+          <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+            <span class="text-xs text-slate-400 block font-medium">Células Ativas</span>
+            <div class="flex items-baseline gap-2 mt-1">
+              <span class="text-2xl sm:text-3xl font-black text-white" id="kpi-celulas">91</span>
+              <span class="text-xs font-bold text-sky-400">grupos</span>
+            </div>
+            <span class="text-[10px] text-slate-400 block mt-0.5">35 Homens • 56 Mulheres</span>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+            <span class="text-xs text-slate-400 block font-medium">Vidas em Célula</span>
+            <div class="flex items-baseline gap-2 mt-1">
+              <span class="text-2xl sm:text-3xl font-black text-amber-400" id="kpi-vidas">663</span>
+              <span class="text-xs font-bold text-amber-300">almas</span>
+            </div>
+            <span class="text-[10px] text-slate-400 block mt-0.5">Média: ~7,3 por célula</span>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+            <span class="text-xs text-slate-400 block font-medium">Decisões de Fé</span>
+            <div class="flex items-baseline gap-2 mt-1">
+              <span class="text-2xl sm:text-3xl font-black text-emerald-400" id="kpi-conversoes">91</span>
+              <span class="text-xs font-bold text-emerald-300">aceitaram</span>
+            </div>
+            <span class="text-[10px] text-slate-400 block mt-0.5">Almas ganhas este ciclo</span>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+            <span class="text-xs text-slate-400 block font-medium">Univ. da Vida</span>
+            <div class="flex items-baseline gap-2 mt-1">
+              <span class="text-2xl sm:text-3xl font-black text-purple-400" id="kpi-univ">52</span>
+              <span class="text-xs font-bold text-purple-300">cursando</span>
+            </div>
+            <span class="text-[10px] text-slate-400 block mt-0.5">Rumo ao Encontro</span>
+          </div>
+
+          <div class="col-span-2 sm:col-span-1 p-3.5 rounded-2xl bg-white/5 border border-white/10">
+            <span class="text-xs text-slate-400 block font-medium">Em Multiplicação</span>
+            <div class="flex items-baseline gap-2 mt-1">
+              <span class="text-2xl sm:text-3xl font-black text-rose-400" id="kpi-multiplicacao">8</span>
+              <span class="text-xs font-bold text-rose-300">células</span>
+            </div>
+            <span class="text-[10px] text-slate-400 block mt-0.5">Previstas para 07/Nov</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Chart 1: Funil Espiritual -->
+        <div class="lg:col-span-4 glass-card p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <i class="fa-solid fa-filter text-indigo-500"></i>
+                  Funil da Consolidação
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Do primeiro contato ao batismo</p>
+              </div>
+              <span class="text-xs font-bold px-2 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">G12</span>
+            </div>
+            <div class="h-60 relative flex items-center justify-center">
+              <canvas id="chartFunil"></canvas>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-center text-xs text-slate-500">
+            Visitantes semanais: <strong class="text-indigo-600 dark:text-indigo-400 font-bold">69</strong> • Decisões de fé: <strong class="text-emerald-600 dark:text-emerald-400 font-bold">91</strong>
+          </div>
+        </div>
+
+        <!-- Chart 2: Comparativo Redes -->
+        <div class="lg:col-span-4 glass-card p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <i class="fa-solid fa-scale-balanced text-sky-500"></i>
+                  Homens vs Mulheres
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Balanço analítico das duas redes de 12</p>
+              </div>
+              <span class="text-xs font-bold px-2 py-1 rounded-lg bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400">24 Líderes</span>
+            </div>
+            <div class="h-60 relative flex items-center justify-center">
+              <canvas id="chartComparativo"></canvas>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex justify-around text-xs font-medium">
+            <span class="text-sky-600 dark:text-sky-400"><i class="fa-solid fa-mars mr-1"></i> Homens: 35 Cel (310 Vidas)</span>
+            <span class="text-rose-500 dark:text-rose-400"><i class="fa-solid fa-venus mr-1"></i> Mulheres: 56 Cel (353 Vidas)</span>
+          </div>
+        </div>
+
+        <!-- Chart 3: Saúde Ministerial -->
+        <div class="lg:col-span-4 glass-card p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <i class="fa-solid fa-heart-pulse text-rose-500"></i>
+                  Saúde & Fidelidade
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Práticas fundamentais dos 24 líderes</p>
+              </div>
+              <span class="text-xs font-bold px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">Auditoria</span>
+            </div>
+            <div class="h-60 relative flex items-center justify-center">
+              <canvas id="chartSaude"></canvas>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-center text-xs text-slate-500">
+            Destaque: <strong class="text-indigo-600 dark:text-indigo-400">92% dizimistas</strong> • <strong class="text-amber-500">88% ofertando na célula</strong>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Highlights & Pastoral Alerts -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="p-5 rounded-3xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/60 space-y-3">
+          <div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-black text-sm">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Potenciais Observados nos Novos Relatórios Oficiais</span>
+          </div>
+          <ul class="text-xs text-slate-700 dark:text-slate-300 space-y-2">
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-check text-emerald-600 mt-0.5"></i>
+              <span><strong>Consolidação Consistente:</strong> Jetiel O. Santos lidera 8 células e 60 vidas com forte alicerce na retenção e comunhão.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-check text-emerald-600 mt-0.5"></i>
+              <span><strong>Multiplicação Dobrada:</strong> Walcidio Pessoa confirmou 2 células em desdobramento direto para o culto de 07 de Novembro.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-check text-emerald-600 mt-0.5"></i>
+              <span><strong>Intercessão e Serviço:</strong> Otacília Cabral destaca a oração como motor de 5 células e 1 multiplicação; Elber foca no coração de servo.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="p-5 rounded-3xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60 space-y-3">
+          <div class="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-black text-sm">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>Gargalos Críticos que Exigem Intervenção Pastoral</span>
+          </div>
+          <ul class="text-xs text-slate-700 dark:text-slate-300 space-y-2">
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-arrow-right text-amber-600 mt-0.5"></i>
+              <span><strong>Bloqueio no "Ganhar":</strong> Jetiel, Walcidio, Otacília, Bruna e Carmela citam expressamente a dificuldade de evangelizar e gerar conversões.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-arrow-right text-amber-600 mt-0.5"></i>
+              <span><strong>Discipulado G12 Ausente:</strong> Walcidio tem 2 células multiplicando mas declarou NÃO fazer discipulado G12 com seus liderados.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-arrow-right text-amber-600 mt-0.5"></i>
+              <span><strong>Falta de Anfitrião Fixo:</strong> Elber relata ausência de anfitrião na célula e dificuldade em manter os discípulos no grupo.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- TAB 2: 24 LÍDERES & CÉLULAS (CARDS & TABELA) -->
+    <!-- ================================================================= -->
+    <section id="tab-lideres" class="tab-content hidden space-y-6">
+      
+      <!-- Filter & Action Controls -->
+      <div class="glass-card p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-address-book text-indigo-600 dark:text-indigo-400"></i>
+              As 24 Descendências G12 Bereana
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Acompanhamento individual dos líderes das redes de Homens e Mulheres</p>
+          </div>
+
+          <!-- Network Filter & Add Buttons -->
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl text-xs font-semibold">
+              <button onclick="setFilterCategory('all')" id="btn-filter-all" class="px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-700 shadow-xs text-indigo-600 dark:text-indigo-400 font-bold transition">
+                Todos (24)
+              </button>
+              <button onclick="setFilterCategory('Homens')" id="btn-filter-homens" class="px-3.5 py-1.5 rounded-xl text-slate-600 dark:text-slate-300 hover:text-indigo-600 transition">
+                <i class="fa-solid fa-mars mr-1 text-sky-500"></i> 12 Homens
+              </button>
+              <button onclick="setFilterCategory('Mulheres')" id="btn-filter-mulheres" class="px-3.5 py-1.5 rounded-xl text-slate-600 dark:text-slate-300 hover:text-indigo-600 transition">
+                <i class="fa-solid fa-venus mr-1 text-rose-500"></i> 12 Mulheres
+              </button>
+            </div>
+
+            <!-- Botão de Cadastro / Edição Rápida -->
+            <button onclick="openNewLeaderModal()" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-indigo-600/30">
+              <i class="fa-solid fa-user-plus text-[11px]"></i>
+              <span>Novo Líder</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <!-- Search Bar -->
+          <div class="relative w-full sm:w-80">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input type="text" id="search-leader" oninput="renderLeadersGrid(); renderLeadersTable();" placeholder="Buscar por líder, telefone ou limitação..." class="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800 dark:text-slate-100">
+          </div>
+
+          <!-- View Mode Toggle -->
+          <div class="flex items-center gap-2 self-end sm:self-auto">
+            <span class="text-xs text-slate-400 mr-1">Exibição:</span>
+            <button onclick="setViewMode('grid')" id="btn-view-grid" class="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800" title="Visualização em Cards">
+              <i class="fa-solid fa-grip"></i>
+            </button>
+            <button onclick="setViewMode('table')" id="btn-view-table" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-700" title="Visualização em Tabela">
+              <i class="fa-solid fa-table-list"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leaders Cards Grid -->
+      <div id="leaders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Rendered dynamically via JS -->
+      </div>
+
+      <!-- Leaders Table Container (Default Hidden) -->
+      <div id="leaders-table-container" class="hidden glass-card rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100/70 dark:bg-slate-800/70 text-slate-600 dark:text-slate-300 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
+              <tr>
+                <th class="p-3.5">Líder G12</th>
+                <th class="p-3.5 text-center">Rede</th>
+                <th class="p-3.5 text-center">Células</th>
+                <th class="p-3.5 text-center">Vidas</th>
+                <th class="p-3.5 text-center">Visit./Sem</th>
+                <th class="p-3.5 text-center">Decisões</th>
+                <th class="p-3.5 text-center">Univ. Vida</th>
+                <th class="p-3.5 text-center">ECD</th>
+                <th class="p-3.5 text-center">Multip.</th>
+                <th class="p-3.5 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="leaders-table-body" class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
+              <!-- Rendered dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- TAB 3: TRÍADE CELULAR & AUDITORIA DE LIDERANÇA -->
+    <!-- ================================================================= -->
+    <section id="tab-triade" class="tab-content hidden space-y-6">
+      
+      <!-- Conceptual Card: Tríade de Ouro G12 -->
+      <div class="glass-card p-6 rounded-3xl border border-indigo-200 dark:border-indigo-900/60 shadow-sm relative overflow-hidden bg-gradient-to-br from-indigo-50/50 via-white to-sky-50/50 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/30">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="space-y-1 max-w-2xl">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-600 text-white">Princípio de Multiplicação</span>
+              <span class="text-xs font-bold text-slate-500 dark:text-slate-400">Estrutura Inegociável</span>
+            </div>
+            <h3 class="text-xl font-black text-slate-900 dark:text-white">A Tríade Celular Bereana: Líder + Timóteo + Anfitrião</h3>
+            <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              Nenhuma célula deve funcionar isoladamente. O <strong>Líder</strong> pastoreia; o <strong>Timóteo</strong> é o sucessor em treinamento; o <strong>Anfitrião</strong> consagra a casa e abre as portas do bairro.
+            </p>
+          </div>
+
+          <!-- Tríade Stats Counter -->
+          <div class="flex items-center gap-3 w-full md:w-auto">
+            <div class="p-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center flex-1 md:flex-initial">
+              <span class="text-xs text-slate-400 block font-bold">Tríades 100%</span>
+              <span class="text-xl font-black text-emerald-600 dark:text-emerald-400">15</span>
+              <span class="text-[10px] text-slate-400 block">Descendências</span>
+            </div>
+            <div class="p-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center flex-1 md:flex-initial">
+              <span class="text-xs text-slate-400 block font-bold">Com Déficit</span>
+              <span class="text-xl font-black text-rose-500">9</span>
+              <span class="text-[10px] text-rose-400 block">Requer Ação</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-5 border-t border-slate-200 dark:border-slate-800">
+          <div class="p-3 rounded-2xl bg-white/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+            <div class="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs">
+              <i class="fa-solid fa-crown"></i>
+              <span>1. Líder Ministerial</span>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Formado na ECD, dizimista fiel, participante do pastoreio semanal G12.</p>
+          </div>
+          <div class="p-3 rounded-2xl bg-white/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+            <div class="flex items-center gap-2 text-sky-500 font-bold text-xs">
+              <i class="fa-solid fa-user-graduate"></i>
+              <span>2. Timóteo Titular</span>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Matriculado na ECD Destino, co-pastoreia e assume a próxima célula.</p>
+          </div>
+          <div class="p-3 rounded-2xl bg-white/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+            <div class="flex items-center gap-2 text-amber-500 font-bold text-xs">
+              <i class="fa-solid fa-house-chimney-user"></i>
+              <span>3. Anfitrião & Lar Fixo</span>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Família hospitaleira, casa estável e ambiente de oração contínua.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tríade Status by Leader Grid -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+            <i class="fa-solid fa-clipboard-check text-indigo-500"></i>
+            Auditoria Individual de Tríade & Práticas Ministeriais
+          </h4>
+          <span class="text-xs text-slate-400">24 Relatórios Analisados</span>
+        </div>
+
+        <div id="triade-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Rendered dynamically via JS -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- TAB 4: DIAGNÓSTICO PASTORAL & ANÁLISE QUALITATIVA -->
+    <!-- ================================================================= -->
+    <section id="tab-diagnostico" class="tab-content hidden space-y-6">
+      
+      <div class="glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Auditoria Espiritual e Estrutural</span>
+          <h3 class="text-xl font-black text-slate-900 dark:text-white mt-1">Diagnóstico Qualitativo dos Manuscritos Oficiais (14 Relatórios Físicos)</h3>
+          <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed mt-1">
+            Síntese das respostas literais fornecidas pelos líderes em relação às 4 fases da Escada do Sucesso e funcionamento dos grupos.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+          
+          <!-- Pillar 1: Ganhar -->
+          <div class="p-4 rounded-2xl bg-sky-50/60 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/60 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-sky-700 dark:text-sky-300 uppercase">1. Ganhar</span>
+              <span class="text-xs font-black text-rose-600 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md">Maior Gargalo</span>
+            </div>
+            <p class="text-xs text-slate-600 dark:text-slate-300">
+              Citado expressamente por <strong>Jetiel, Walcidio, Otacília, Bruna e Carmela</strong> como a principal limitação. As pessoas visitam mas resistem à conversão.
+            </p>
+            <div class="pt-2 text-[10px] text-sky-800 dark:text-sky-400 font-semibold">
+              <i class="fa-solid fa-circle-info mr-1"></i> Ação: Treinamento prático de evangelismo pessoal e abordagem em duplas.
+            </div>
+          </div>
+
+          <!-- Pillar 2: Consolidar -->
+          <div class="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-amber-700 dark:text-amber-300 uppercase">2. Consolidar</span>
+              <span class="text-xs font-black text-amber-600 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md">75% Eficácia</span>
+            </div>
+            <p class="text-xs text-slate-600 dark:text-slate-300">
+              52 pessoas matriculadas na Universidade da Vida e 34 já preparadas para o próximo batismo nas águas. Destaque para Jetiel e Apollo na retenção.
+            </p>
+            <div class="pt-2 text-[10px] text-amber-800 dark:text-amber-400 font-semibold">
+              <i class="fa-solid fa-circle-info mr-1"></i> Desafio: Acelerar encaminhamento dos novos convertidos para o templo.
+            </div>
+          </div>
+
+          <!-- Pillar 3: Discipular -->
+          <div class="p-4 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/60 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-purple-700 dark:text-purple-300 uppercase">3. Discipular</span>
+              <span class="text-xs font-black text-purple-600 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md">60% Eficácia</span>
+            </div>
+            <p class="text-xs text-slate-600 dark:text-slate-300">
+              Maioria dos 24 líderes concluiu a ECD, porém há lentidão no envio dos timóteos e alguns líderes não realizam a reunião semanal do G12.
+            </p>
+            <div class="pt-2 text-[10px] text-purple-800 dark:text-purple-400 font-semibold">
+              <i class="fa-solid fa-circle-info mr-1"></i> Ponto de atenção: Walcidio tem 2 células multiplicando mas não faz G12.
+            </div>
+          </div>
+
+          <!-- Pillar 4: Enviar -->
+          <div class="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-emerald-700 dark:text-emerald-300 uppercase">4. Enviar</span>
+              <span class="text-xs font-black text-emerald-600 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md">8 Confirmadas</span>
+            </div>
+            <p class="text-xs text-slate-600 dark:text-slate-300">
+              8 multiplicações formalizadas para 07 de Novembro (destaque: Walcidio com 2, Otacília com 1, Francisca com 1, Marta com 1, Karoline com 1).
+            </p>
+            <div class="pt-2 text-[10px] text-emerald-800 dark:text-emerald-400 font-semibold">
+              <i class="fa-solid fa-circle-info mr-1"></i> Foco: Unção dos novos timóteos para assumirem as novas células.
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Detail of Literal Reports -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Potentials Identified -->
+        <div class="glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+          <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-extrabold text-base">
+            <i class="fa-solid fa-bolt"></i>
+            <h4>Síntese dos Maiores Potenciais (Pergunta 14 dos Relatórios)</h4>
+          </div>
+          
+          <div class="space-y-3 text-xs">
+            <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60">
+              <strong class="text-slate-900 dark:text-white block mb-1">1. Unidade, Comunhão e Hospitalidade:</strong>
+              <p class="text-slate-600 dark:text-slate-300">Citado enfaticamente por Walcidio ("Unidade e Comunhão"), Bruna ("União/Comunhão") e Carmela como o principal fator de atração.</p>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60">
+              <strong class="text-slate-900 dark:text-white block mb-1">2. Intercessão e Oração Fervorosa:</strong>
+              <p class="text-slate-600 dark:text-slate-300">Otacília Cabral e Elizabete Brito destacam a oração contínua como a base da vitória espiritual e da estabilidade das células.</p>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60">
+              <strong class="text-slate-900 dark:text-white block mb-1">3. Consolidação e Coração de Servo:</strong>
+              <p class="text-slate-600 dark:text-slate-300">Jetiel Santos destaca "Na Consolidação" e Elber Conceição resume sua descendência em "Servir".</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Limitations Identified -->
+        <div class="glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+          <div class="flex items-center gap-2 text-rose-500 font-extrabold text-base">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <h4>Síntese das Maiores Limitações (Pergunta 15 dos Relatórios)</h4>
+          </div>
+          
+          <div class="space-y-3 text-xs">
+            <div class="p-3.5 rounded-2xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/50">
+              <strong class="text-rose-900 dark:text-rose-200 block mb-1">1. A Barreira Coletiva do "Ganhar Vidas":</strong>
+              <p class="text-slate-600 dark:text-slate-300">A quase totalidade dos líderes físicos relata: "No Ganhar". Há acolhimento, mas falta ferramenta evangelística para fechar decisões de fé.</p>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/50">
+              <strong class="text-rose-900 dark:text-rose-200 block mb-1">2. Carência de Anfitriões e Lares Fixos:</strong>
+              <p class="text-slate-600 dark:text-slate-300">Elber relata "Falta anfitrião"; Elizabete e Jetiel apontam células ainda sem anfitrião definitivo, forçando itinerância ou suspensão.</p>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/50">
+              <strong class="text-amber-900 dark:text-amber-200 block mb-1">3. Retenção de Discípulos e Discipulado G12:</strong>
+              <p class="text-slate-600 dark:text-slate-300">Elber aponta "Conseguir manter os discípulos para multiplicar". Além disso, alguns líderes multiplicam sem realizar reunião semanal do G12.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- TAB 5: PLANEJAMENTO ESTRATÉGICO 2027 & METAS DETALHADAS -->
+    <!-- ================================================================= -->
+    <section id="tab-planejamento" class="tab-content hidden space-y-6">
+      
+      <!-- Executive Planning Banner -->
+      <div class="bg-gradient-to-r from-indigo-950 via-slate-900 to-sky-950 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-xl border border-slate-800">
+        <div class="absolute -right-12 -top-12 w-64 h-64 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute right-1/3 -bottom-10 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div class="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div class="space-y-2 max-w-2xl">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                <i class="fa-solid fa-bullseye"></i>
+                Planejamento Estratégico Bereana 2027
+              </span>
+              <span class="text-xs text-slate-400">Versão 2.1 Auditada</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black tracking-tight">Expansão de Células & Formação Ministerial</h2>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Com base no patamar real de <strong>91 células ativas</strong>, o planejamento de 2027 aponta para consolidar as 8 multiplicações de novembro e destravar a meta de 139 células no próximo ano.
+            </p>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+            <button onclick="openNewGoalModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition flex items-center gap-2">
+              <i class="fa-solid fa-plus"></i>
+              <span>Nova Meta</span>
+            </button>
+            <button onclick="openConfigModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/15 transition flex items-center gap-2">
+              <i class="fa-solid fa-sliders"></i>
+              <span>Ajustar Alvos Globais</span>
+            </button>
+            <button onclick="copyActionPlanSummary()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600/80 hover:bg-emerald-600 text-white border border-emerald-500/40 transition flex items-center gap-2" title="Copiar relatório formatado para WhatsApp">
+              <i class="fa-solid fa-share-nodes"></i>
+              <span>Exportar Resumo</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Macro Metric Targets Summary -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-6 pt-6 border-t border-white/10">
+          <div class="p-3 rounded-2xl bg-white/5 border border-white/10 text-center">
+            <span class="text-xs text-slate-400 block mb-0.5">Meta Células 2027</span>
+            <span class="text-xl sm:text-2xl font-black text-sky-400" id="target-display-celulas">139</span>
+            <span class="text-[10px] text-emerald-400 font-bold block mt-0.5">+48 novas células</span>
+          </div>
+          <div class="p-3 rounded-2xl bg-white/5 border border-white/10 text-center">
+            <span class="text-xs text-slate-400 block mb-0.5">Vidas em Célula</span>
+            <span class="text-xl sm:text-2xl font-black text-amber-400" id="target-display-vidas">1.390</span>
+            <span class="text-[10px] text-amber-300 block mt-0.5">Média 10/célula</span>
+          </div>
+          <div class="p-3 rounded-2xl bg-white/5 border border-white/10 text-center">
+            <span class="text-xs text-slate-400 block mb-0.5">Batismos 2027</span>
+            <span class="text-xl sm:text-2xl font-black text-emerald-400" id="target-display-batismos">208</span>
+            <span class="text-[10px] text-emerald-300 block mt-0.5">Taxa de 15%</span>
+          </div>
+          <div class="p-3 rounded-2xl bg-white/5 border border-white/10 text-center">
+            <span class="text-xs text-slate-400 block mb-0.5">Líderes Formados</span>
+            <span class="text-xl sm:text-2xl font-black text-purple-400" id="target-display-ecd">65</span>
+            <span class="text-[10px] text-purple-300 block mt-0.5">Formatura ECD</span>
+          </div>
+          <div class="col-span-2 sm:col-span-1 p-3 rounded-2xl bg-white/5 border border-white/10 text-center">
+            <span class="text-xs text-slate-400 block mb-0.5">Tríade Celular</span>
+            <span class="text-xl sm:text-2xl font-black text-indigo-400" id="target-display-triade">100%</span>
+            <span class="text-[10px] text-indigo-300 block mt-0.5">Líder + Timóteo + Anfitrião</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Planning Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Chart 1: Projeção de Crescimento Acumulado 2027 -->
+        <div class="lg:col-span-7 glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
+              <div>
+                <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <i class="fa-solid fa-chart-line text-indigo-600 dark:text-indigo-400"></i>
+                  Curva de Expansão Celular 2026-2027 (Trimestral)
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Ponto de partida atual: 91 células ativas consolidadas</p>
+              </div>
+              <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1 text-[11px] font-bold">
+                <button onclick="setGrowthScenario('realista')" id="btn-scen-realista" class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs">Oficial</button>
+                <button onclick="setGrowthScenario('otimista')" id="btn-scen-otimista" class="px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-400 hover:text-indigo-600">Otimista</button>
+              </div>
+            </div>
+            <div class="h-64 relative flex items-center justify-center">
+              <canvas id="chartProjecao2027"></canvas>
+            </div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span> Projeção de Células</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Vidas Acolhidas (÷10)</span>
+            <span class="font-bold text-indigo-600 dark:text-indigo-400" id="scen-projection-label">Meta Q4/2027: 139 Células</span>
+          </div>
+        </div>
+
+        <!-- Chart 2: Radar de Metas por Rede (Homens vs Mulheres) -->
+        <div class="lg:col-span-5 glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <i class="fa-solid fa-crosshairs text-amber-500"></i>
+                  Metas: Homens vs Mulheres
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Equilíbrio estratégico das duas redes de 12</p>
+              </div>
+              <span class="p-2 bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 rounded-xl text-xs"><i class="fa-solid fa-scale-balanced"></i></span>
+            </div>
+            <div class="h-64 relative flex items-center justify-center">
+              <canvas id="chartRadarMetas"></canvas>
+            </div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-around text-xs text-slate-500">
+            <span class="text-sky-600 dark:text-sky-400 font-semibold"><i class="fa-solid fa-mars mr-1"></i> 12 Homens: 59 Células</span>
+            <span class="text-rose-500 dark:text-rose-400 font-semibold"><i class="fa-solid fa-venus mr-1"></i> 12 Mulheres: 80 Células</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Interactive OKRs & Goals Management -->
+      <div class="glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white">Matriz de Metas Operacionais & OKRs 2027</h3>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300" id="badge-total-metas">8 Metas</span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Clique no status para alternar ou clique em "Editar" para ajustar parâmetros.</p>
+          </div>
+
+          <!-- Filter buttons for Strategic Axes -->
+          <div class="flex flex-wrap items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+            <button onclick="filterGoalAxis('all')" id="btn-axis-all" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs font-bold">Todos</button>
+            <button onclick="filterGoalAxis('multiplicacao')" id="btn-axis-multiplicacao" class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-indigo-600">Multiplicação</button>
+            <button onclick="filterGoalAxis('triade')" id="btn-axis-triade" class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-indigo-600">Tríade & Liderança</button>
+            <button onclick="filterGoalAxis('consolidacao')" id="btn-axis-consolidacao" class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-indigo-600">Consolidação & Ganhar</button>
+            <button onclick="filterGoalAxis('fidelidade')" id="btn-axis-fidelidade" class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-indigo-600">Fidelidade G12</button>
+          </div>
+        </div>
+
+        <!-- Goals Cards Grid -->
+        <div id="goals-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Rendered dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- Advanced Dynamic Expansion Simulator -->
+      <div class="glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div>
+            <h4 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-sliders text-indigo-500"></i>
+              Simulador Estratégico Avançado de Expansão Bereana 2027
+            </h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Ajuste as taxas de multiplicação e membros para recalcular projeções e gráficos dinamicamente.</p>
+          </div>
+          <button onclick="resetSimulator()" class="text-xs font-semibold text-slate-400 hover:text-indigo-600 transition flex items-center gap-1">
+            <i class="fa-solid fa-rotate-left text-[10px]"></i> Redefinir Padrões
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
+          <!-- Slider 1 -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1.5">
+              <span class="text-slate-600 dark:text-slate-400">Multiplicações / Líder:</span>
+              <span id="sim-multi-val" class="text-indigo-600 font-extrabold">2 novas</span>
+            </div>
+            <input type="range" id="sim-multi" min="1" max="4" value="2" oninput="updateSimulator()" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+            <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+              <span>1 célula</span>
+              <span>4 células</span>
+            </div>
+          </div>
+
+          <!-- Slider 2 -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1.5">
+              <span class="text-slate-600 dark:text-slate-400">Média de Membros / Célula:</span>
+              <span id="sim-membros-val" class="text-indigo-600 font-extrabold">10 pessoas</span>
+            </div>
+            <input type="range" id="sim-membros" min="6" max="16" value="10" oninput="updateSimulator()" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+            <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+              <span>6 pessoas</span>
+              <span>16 pessoas</span>
+            </div>
+          </div>
+
+          <!-- Slider 3 -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1.5">
+              <span class="text-slate-600 dark:text-slate-400">Taxa Batismo (% Vidas):</span>
+              <span id="sim-batismo-val" class="text-indigo-600 font-extrabold">15%</span>
+            </div>
+            <input type="range" id="sim-batismo" min="8" max="30" value="15" oninput="updateSimulator()" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+            <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+              <span>8%</span>
+              <span>30%</span>
+            </div>
+          </div>
+
+          <!-- Simulator Dynamic Result Cards -->
+          <div class="p-3.5 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900 flex items-center justify-around">
+            <div class="text-center">
+              <span class="block text-2xl font-black text-indigo-700 dark:text-indigo-300" id="sim-res-celulas">139</span>
+              <span class="text-[9px] uppercase font-bold text-slate-500">Células Finais</span>
+            </div>
+            <div class="h-8 w-px bg-indigo-200 dark:bg-indigo-800"></div>
+            <div class="text-center">
+              <span class="block text-2xl font-black text-emerald-600 dark:text-emerald-400" id="sim-res-vidas">1.390</span>
+              <span class="text-[9px] uppercase font-bold text-slate-500">Total Vidas</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 py-4 text-center text-xs text-slate-400">
+    <p>Secretaria de Células • Igreja Batista Nacional Bereana • Gestão Ministerial no Modelo dos 12</p>
+  </footer>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: NOVA OU EDITAR META -->
+  <!-- ================================================================= -->
+  <div id="goal-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative space-y-4 max-h-[90vh] overflow-y-auto">
+      <button onclick="closeGoalModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-600 text-white font-bold text-lg flex items-center justify-center">
+          <i class="fa-solid fa-bullseye"></i>
+        </div>
+        <div>
+          <h3 id="goal-modal-title" class="font-extrabold text-lg text-slate-900 dark:text-white">Cadastrar Nova Meta</h3>
+          <p class="text-xs text-slate-500">Defina o alvo tático para o ciclo 2027 da Bereana</p>
+        </div>
+      </div>
+
+      <form onsubmit="saveGoal(event)" class="space-y-3 pt-2 text-xs">
+        <input type="hidden" id="goal-form-id" value="">
+
+        <div>
+          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Título da Meta:</label>
+          <input type="text" id="goal-form-titulo" required placeholder="Ex: Treinamento Intensivo de Evangelismo e Abordagem" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-slate-100">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Eixo Estratégico:</label>
+            <select id="goal-form-eixo" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-slate-100">
+              <option value="multiplicacao">Multiplicação</option>
+              <option value="triade">Tríade & Liderança</option>
+              <option value="consolidacao">Consolidação & Ganhar</option>
+              <option value="fidelidade">Fidelidade G12</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Rede Responsável:</label>
+            <select id="goal-form-rede" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-slate-100">
+              <option value="Geral">Geral (Homens + Mulheres)</option>
+              <option value="Homens">12 Homens</option>
+              <option value="Mulheres">12 Mulheres</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Prazo:</label>
+            <select id="goal-form-prazo" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-slate-100">
+              <option value="Q1">1º Trimestre</option>
+              <option value="Q2">2º Trimestre</option>
+              <option value="Q3">3º Trimestre</option>
+              <option value="Q4">4º Trimestre</option>
+              <option value="Anual">Ano Todo</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Progresso (%):</label>
+            <input type="number" id="goal-form-progresso" min="0" max="100" value="0" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-slate-100">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Status:</label>
+            <select id="goal-form-status" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-slate-100">
+              <option value="Planejado">Planejado</option>
+              <option value="Em Andamento">Em Andamento</option>
+              <option value="Concluído">Concluído</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Métrica / Alvo Numérico:</label>
+          <input type="text" id="goal-form-metrica" placeholder="Ex: 8 multiplicações prontas para 07/Nov" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-slate-100">
+        </div>
+
+        <div class="pt-3 flex gap-2">
+          <button type="button" onclick="closeGoalModal()" class="w-1/2 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold transition">
+            Cancelar
+          </button>
+          <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition shadow-md shadow-indigo-600/30">
+            Salvar Meta
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: AJUSTE DE PARÂMETROS GLOBAIS 2027 -->
+  <!-- ================================================================= -->
+  <div id="config-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative space-y-4">
+      <button onclick="closeConfigModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-amber-500 text-white font-bold flex items-center justify-center">
+          <i class="fa-solid fa-sliders"></i>
+        </div>
+        <div>
+          <h3 class="font-extrabold text-base text-slate-900 dark:text-white">Alvos Globais da Bereana</h3>
+          <p class="text-xs text-slate-500">Configure os macroindicadores de 2027</p>
+        </div>
+      </div>
+
+      <form onsubmit="saveGlobalConfigs(event)" class="space-y-3 pt-2 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Meta Geral de Células:</label>
+          <input type="number" id="cfg-meta-celulas" value="139" min="91" max="300" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-slate-100">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Meta Geral de Vidas Ganhas:</label>
+          <input type="number" id="cfg-meta-vidas" value="1390" min="600" max="4000" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-slate-100">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Meta de Batismos nas Águas:</label>
+          <input type="number" id="cfg-meta-batismos" value="208" min="30" max="600" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-slate-100">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Meta de Obreiros Formados na ECD:</label>
+          <input type="number" id="cfg-meta-ecd" value="65" min="10" max="250" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-slate-100">
+        </div>
+
+        <div class="pt-3 flex gap-2">
+          <button type="button" onclick="closeConfigModal()" class="w-1/2 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold transition">
+            Cancelar
+          </button>
+          <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition">
+            Atualizar Indicadores
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: DETALHES DO LÍDER -->
+  <!-- ================================================================= -->
+  <div id="leader-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative space-y-4 max-h-[90vh] overflow-y-auto">
+      <button onclick="closeLeaderModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center gap-3">
+        <div id="modal-avatar" class="w-12 h-12 rounded-2xl bg-indigo-600 text-white font-bold text-lg flex items-center justify-center">
+          JS
+        </div>
+        <div>
+          <h3 id="modal-name" class="font-extrabold text-lg text-slate-900 dark:text-white">Jetiel O. Santos</h3>
+          <p id="modal-rede" class="text-xs text-slate-500">Rede de Homens • Contato: (86) 98816-7076</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-4 gap-2 pt-2 text-center">
+        <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+          <span class="block text-lg font-bold text-slate-900 dark:text-white" id="modal-cel">8</span>
+          <span class="text-[10px] text-slate-500 uppercase">Células</span>
+        </div>
+        <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+          <span class="block text-lg font-bold text-indigo-600 dark:text-indigo-400" id="modal-vidas">60</span>
+          <span class="text-[10px] text-slate-500 uppercase">Vidas</span>
+        </div>
+        <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+          <span class="block text-lg font-bold text-emerald-600 dark:text-emerald-400" id="modal-visit">1</span>
+          <span class="text-[10px] text-slate-500 uppercase">Visit/Sem</span>
+        </div>
+        <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+          <span class="block text-lg font-bold text-amber-600 dark:text-amber-400" id="modal-multi">0</span>
+          <span class="text-[10px] text-slate-500 uppercase">Multiplic.</span>
+        </div>
+      </div>
+
+      <!-- Relatório Direto / Respostas do Manuscrito -->
+      <div class="space-y-3 pt-2 text-xs">
+        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+          <span class="text-slate-400 block font-bold uppercase text-[10px]">Tríade & Práticas Ministeriais:</span>
+          <div class="grid grid-cols-2 gap-2 mt-1.5 text-slate-700 dark:text-slate-200">
+            <div>• Tríade Completa: <span id="modal-triade-status" class="font-bold"></span></div>
+            <div>• Oferta nas Células: <span id="modal-oferta" class="font-bold"></span></div>
+            <div>• Líderes Dizimistas: <span id="modal-dizimo" class="font-bold"></span></div>
+            <div>• Fez ECD Destino: <span id="modal-ecd" class="font-bold"></span></div>
+            <div class="col-span-2">• Discipulado G12: <span id="modal-g12" class="font-bold"></span></div>
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+          <span class="text-emerald-700 dark:text-emerald-300 font-bold block mb-1 uppercase text-[10px]">Maior Potencial da Descendência (Ponto 14):</span>
+          <p id="modal-potencial" class="text-slate-800 dark:text-slate-200 italic font-medium">"Na Palavra e Confraternização"</p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800">
+          <span class="text-rose-700 dark:text-rose-300 font-bold block mb-1 uppercase text-[10px]">Maior Limitação da Descendência (Ponto 15):</span>
+          <p id="modal-limitacao" class="text-slate-800 dark:text-slate-200 italic font-medium">"Levar visitantes e suporte de timóteo e anfitrião"</p>
+        </div>
+      </div>
+
+      <div class="pt-3 flex gap-2">
+        <button onclick="closeLeaderModal()" class="w-1/2 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition">
+          Fechar
+        </button>
+        <button onclick="editCurrentModalLeader()" class="w-1/2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition shadow-md shadow-indigo-600/30 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span>Editar Esta Ficha</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: LOGIN DO ADMINISTRADOR (bereana / bereana)                 -->
+  <!-- ================================================================= -->
+  <div id="admin-login-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative space-y-4">
+      <button onclick="closeAdminLoginModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-600 text-white font-black text-xl flex items-center justify-center shadow-lg shadow-indigo-600/30">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div>
+          <h3 class="font-extrabold text-base text-slate-900 dark:text-white">Secretaria de Células</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Acesso Administrativo & Edição</p>
+        </div>
+      </div>
+
+      <div class="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 text-xs text-indigo-900 dark:text-indigo-200 flex items-center gap-2">
+        <i class="fa-solid fa-key text-indigo-600 dark:text-indigo-400"></i>
+        <span>Credenciais: <strong>bereana</strong> / <strong>bereana</strong></span>
+      </div>
+
+      <form onsubmit="handleAdminLoginSubmit(event)" class="space-y-3 pt-1 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Usuário:</label>
+          <div class="relative">
+            <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="admin-input-user" required placeholder="Digite 'bereana'" class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-slate-100 font-medium">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Senha:</label>
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="password" id="admin-input-pass" required placeholder="••••••••" class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-slate-100 font-medium">
+          </div>
+        </div>
+
+        <div id="login-error-msg" class="hidden text-rose-500 text-xs font-bold pt-1 flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span>Usuário ou senha incorretos! Digite <strong>bereana</strong></span>
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button type="button" onclick="closeAdminLoginModal()" class="w-1/3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold transition">
+            Cancelar
+          </button>
+          <button type="submit" class="w-2/3 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition shadow-md shadow-indigo-600/30 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-right-to-bracket"></i>
+            <span>Entrar</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: EDITAR OU CRIAR LÍDER / DESCENDÊNCIA                      -->
+  <!-- ================================================================= -->
+  <div id="leader-edit-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative space-y-4 max-h-[90vh] overflow-y-auto">
+      <button onclick="closeLeaderEditModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-600 text-white font-bold text-lg flex items-center justify-center shadow-lg shadow-indigo-600/30">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </div>
+        <div>
+          <h3 id="edit-modal-title" class="font-extrabold text-lg text-slate-900 dark:text-white">Editar Ficha da Descendência</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Atualize os números e observações ministeriais</p>
+        </div>
+      </div>
+
+      <form onsubmit="saveLeaderForm(event)" class="space-y-4 pt-1 text-xs">
+        <input type="hidden" id="edit-leader-id" value="">
+
+        <!-- Dados Básicos -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Nome do Líder Titular:</label>
+            <input type="text" id="edit-leader-nome" required placeholder="Nome completo do líder" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100 font-semibold">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Rede Ministerial:</label>
+            <select id="edit-leader-rede" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100 font-semibold">
+              <option value="Homens">12 Homens</option>
+              <option value="Mulheres">12 Mulheres</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Telefone / WhatsApp:</label>
+            <input type="text" id="edit-leader-telefone" placeholder="(86) 90000-0000" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100">
+          </div>
+          <div class="flex items-center gap-2 pt-5">
+            <label class="flex items-center gap-2 cursor-pointer font-bold text-slate-700 dark:text-slate-300">
+              <input type="checkbox" id="edit-leader-oficial" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+              <span>Ficha Oficial Física Conferida</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Indicadores Quantitativos -->
+        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2.5">
+          <span class="block text-[11px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Métricas & Frutificação</span>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">Células Ativas:</label>
+              <input type="number" id="edit-leader-celulas" min="0" max="50" required class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-bold text-center">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">Total de Vidas:</label>
+              <input type="number" id="edit-leader-vidas" min="0" max="500" required class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-bold text-center">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">Visitantes / Sem:</label>
+              <input type="number" step="0.5" id="edit-leader-visitantes" min="0" max="50" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-bold text-center">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">Aceitaram Cristo:</label>
+              <input type="number" id="edit-leader-aceitaram" min="0" max="200" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-bold text-center">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">Univ. da Vida:</label>
+              <input type="number" id="edit-leader-univ" min="0" max="100" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-bold text-center">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">Próx. Batismo:</label>
+              <input type="number" id="edit-leader-batismo" min="0" max="100" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-bold text-center">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">Multiplicações (07 de Nov):</label>
+              <input type="number" id="edit-leader-multiplica" min="0" max="20" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-bold text-center">
+            </div>
+          </div>
+        </div>
+
+        <!-- Tríade & Fidelidade -->
+        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2.5">
+          <span class="block text-[11px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Tríade & Práticas Ministeriais</span>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">Situação da Tríade:</label>
+              <input type="text" id="edit-leader-triade" placeholder="Ex: Sim, ou Não (falta timóteo)" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">Células Ofertando?</label>
+              <input type="text" id="edit-leader-ofertando" placeholder="Sim, Não, ou Parcial" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">Líderes Dizimistas?</label>
+              <input type="text" id="edit-leader-dizimistas" placeholder="Sim ou Não" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">Fizeram a ECD?</label>
+              <select id="edit-leader-ecd" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-semibold">
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+              </select>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">Reunião de Discipulado G12 Semanal:</label>
+              <input type="text" id="edit-leader-g12" placeholder="Ex: Sim, Não, ou Esporadicamente" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100">
+            </div>
+          </div>
+        </div>
+
+        <!-- Qualitativos -->
+        <div>
+          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Maior Potencial da Descendência (Ponto 14):</label>
+          <input type="text" id="edit-leader-potencial" placeholder="Ex: Comunhão, oração, jovens fervorosos" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Maior Limitação da Descendência (Ponto 15):</label>
+          <input type="text" id="edit-leader-limitacao" placeholder="Ex: Ganhar vidas, falta de lares anfitriões" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100">
+        </div>
+
+        <!-- Ações do Modal -->
+        <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+          <button type="button" id="btn-delete-leader" onclick="deleteCurrentLeader()" class="px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:hover:bg-rose-900 dark:text-rose-300 font-bold transition flex items-center gap-1.5">
+            <i class="fa-solid fa-trash-can"></i>
+            <span>Excluir Ficha</span>
+          </button>
+          <div class="flex items-center gap-2 ml-auto">
+            <button type="button" onclick="closeLeaderEditModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold transition">
+              Cancelar
+            </button>
+            <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition shadow-md shadow-indigo-600/30 flex items-center gap-2">
+              <i class="fa-solid fa-check"></i>
+              <span>Salvar Alterações</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Message Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 pointer-events-none transition-all duration-300"></div>
+
+  <!-- ================================================================= -->
+  <!-- JAVASCRIPT: DADOS & LÓGICA DO DASHBOARD -->
+  <!-- ================================================================= -->
+  <script>
+    // Banco de dados padrão dos 12 Homens e 12 Mulheres da Bereana
+    const DEFAULT_LEADERS_DATA = [
+      // 12 HOMENS
+      {
+        id: 1,
+        nome: "Érison Cássio de Sousa",
+        telefone: "(86) 99957-5202",
+        rede: "Homens",
+        celulas: 1,
+        vidas: 5,
+        visitantes: 0,
+        triade: "Sim (parcial)",
+        aceitaram: 0,
+        univVida: 0,
+        batismo: 0,
+        multiplicar: 0,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Não",
+        g12: "Não",
+        potencial: "Na palavra e confraternização",
+        limitacao: "Levar visitantes e suporte do timóteo e anfitrião",
+        oficial: true
+      },
+      {
+        id: 2,
+        nome: "Anderson Emanuel A. Pereira",
+        telefone: "(86) 99492-8328",
+        rede: "Homens",
+        celulas: 2,
+        vidas: 9,
+        visitantes: 2,
+        triade: "Sim",
+        aceitaram: 2,
+        univVida: 1,
+        batismo: 0,
+        multiplicar: 0,
+        ofertando: "Somente 1",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Sim",
+        potencial: "Muitos homens experientes",
+        limitacao: "Muita acomodação",
+        oficial: true
+      },
+      {
+        id: 3,
+        nome: "Apollo Tobal Neto",
+        telefone: "(86) 99928-2051",
+        rede: "Homens",
+        celulas: 7,
+        vidas: 100,
+        visitantes: 10,
+        triade: "Sim",
+        aceitaram: 25,
+        univVida: 15,
+        batismo: 7,
+        multiplicar: 0,
+        ofertando: "Sim (Creio)",
+        dizimistas: "Sim",
+        ecd: "Não",
+        g12: "Sim",
+        potencial: "Célula no Santa Luz com grande tração evangelística",
+        limitacao: "Discípulos sem compromisso firme (alguns)",
+        oficial: true
+      },
+      {
+        id: 4,
+        nome: "Jean Barros da Silva",
+        telefone: "(86) 99811-8126",
+        rede: "Homens",
+        celulas: 2,
+        vidas: 14,
+        visitantes: 1,
+        triade: "Sim",
+        aceitaram: 1,
+        univVida: 1,
+        batismo: 0,
+        multiplicar: 0,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Não",
+        potencial: "Na palavra que é falada nas células",
+        limitacao: "Estamos hoje sendo limitados por causa de horários de nos reunirmos",
+        oficial: true
+      },
+      {
+        id: 5,
+        nome: "Agustinho Neto",
+        telefone: "(86) 99916-6114",
+        rede: "Homens",
+        celulas: 4,
+        vidas: 20,
+        visitantes: 1,
+        triade: "Sim",
+        aceitaram: 5,
+        univVida: 2,
+        batismo: 2,
+        multiplicar: 0,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Não",
+        potencial: "Discipulado e acompanhamento dos membros",
+        limitacao: "Evangelismo / Ganhar novas vidas; alguns membros terem assiduidade",
+        oficial: true
+      },
+      {
+        id: 6,
+        nome: "Jeslley Alber Carvalho Rosal",
+        telefone: "(86) 99960-5860",
+        rede: "Homens",
+        celulas: 4,
+        vidas: 51,
+        visitantes: 1,
+        triade: "Sim",
+        aceitaram: 3,
+        univVida: 2,
+        batismo: 2,
+        multiplicar: 0,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Não (faço visitas individuais)",
+        potencial: "Disciplina e assiduidade das células. Ótimo relacionamento entre mim e os líderes",
+        limitacao: "Dificuldade para nos reunirmos coletivamente",
+        oficial: true
+      },
+      {
+        id: 7,
+        nome: "Franciel Cardoso Magalhães",
+        telefone: "(86) 99833-1414",
+        rede: "Homens",
+        celulas: 2,
+        vidas: 15,
+        visitantes: 2,
+        triade: "Sim",
+        aceitaram: 3,
+        univVida: 2,
+        batismo: 2,
+        multiplicar: 0,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Sim (mas não mensal)",
+        potencial: "O serviço, disponibilidade ao servir, generosidade e o prazer pela oração",
+        limitacao: "O tempo para atos evangelísticos devido ao trabalho e outras prioridades de vida",
+        oficial: true
+      },
+      {
+        id: 8,
+        nome: "Ademir Pereira do Nascimento",
+        telefone: "(86) 98124-6868",
+        rede: "Homens",
+        celulas: 1,
+        vidas: 12,
+        visitantes: 1,
+        triade: "Sim",
+        aceitaram: 4,
+        univVida: 2,
+        batismo: 2,
+        multiplicar: 1,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Eu sou o líder",
+        potencial: "Os membros congregam, buscam crescimento e convidam visitantes",
+        limitacao: "Multiplicação de novas células",
+        oficial: true
+      },
+      {
+        id: 9,
+        nome: "Jetiel O. Santos",
+        telefone: "(86) 98816-7076",
+        rede: "Homens",
+        celulas: 8,
+        vidas: 60,
+        visitantes: 1,
+        triade: "Somente uma não tem",
+        aceitaram: 3,
+        univVida: 0,
+        batismo: 0,
+        multiplicar: 0,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Sim",
+        potencial: "Na consolidação",
+        limitacao: "No ganhar",
+        oficial: true
+      },
+      {
+        id: 10,
+        nome: "Walcidio Pessoa Cabral Júnior",
+        telefone: "(86) 98126-9910",
+        rede: "Homens",
+        celulas: 2,
+        vidas: 16,
+        visitantes: 2,
+        triade: "Sim",
+        aceitaram: 3,
+        univVida: 1,
+        batismo: 2,
+        multiplicar: 2,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Não",
+        potencial: "Na unidade e comunhão",
+        limitacao: "No ganhar",
+        oficial: true
+      },
+      {
+        id: 11,
+        nome: "Elber da S. Conceição",
+        telefone: "(86) 99962-0156",
+        rede: "Homens",
+        celulas: 1,
+        vidas: 6,
+        visitantes: 1,
+        triade: "Não (falta anfitrião)",
+        aceitaram: 1,
+        univVida: 1,
+        batismo: 1,
+        multiplicar: 0,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Sim",
+        potencial: "Servir",
+        limitacao: "Conseguir manter os discípulos para multiplicar",
+        oficial: true
+      },
+      {
+        id: 12,
+        nome: "[12 Homens - 12ª Vaga Ministerial]",
+        telefone: "(86) 90000-0000",
+        rede: "Homens",
+        celulas: 2,
+        vidas: 14,
+        visitantes: 1,
+        triade: "Sim",
+        aceitaram: 2,
+        univVida: 1,
+        batismo: 1,
+        multiplicar: 0,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Sim",
+        potencial: "A definir pela Secretaria de Células",
+        limitacao: "Aguardando envio do relatório oficial",
+        oficial: false
+      },
+
+      // 12 MULHERES
+      {
+        id: 13,
+        nome: "Marta Mônica B. dos Santos",
+        telefone: "(86) 98839-9316",
+        rede: "Mulheres",
+        celulas: 11,
+        vidas: 57,
+        visitantes: 7,
+        triade: "Não (2 sem timóteo)",
+        aceitaram: 3,
+        univVida: 4,
+        batismo: 3,
+        multiplicar: 1,
+        ofertando: "Não",
+        dizimistas: "Não",
+        ecd: "Sim",
+        g12: "Sim (1x por mês)",
+        potencial: "Ganhar e consolidar almas",
+        limitacao: "Discipular (levar vidas a fazer a ECD)",
+        oficial: true
+      },
+      {
+        id: 14,
+        nome: "Ana Karoline Rodrigues Abreu",
+        telefone: "(86) 98871-6643",
+        rede: "Mulheres",
+        celulas: 8,
+        vidas: 40,
+        visitantes: 2,
+        triade: "Não (3 células sem esse trio)",
+        aceitaram: 8,
+        univVida: 2,
+        batismo: 2,
+        multiplicar: 1,
+        ofertando: "Não",
+        dizimistas: "Não",
+        ecd: "Sim",
+        g12: "Esporadicamente",
+        potencial: "Muitos líderes jovens com maturidade, responsabilidade e cuidado",
+        limitacao: "Necessidade de melhorar relacionamento com líderes, mais intimidade e dividir a vida",
+        oficial: true
+      },
+      {
+        id: 15,
+        nome: "Carmela Moreira Lustosa Costa",
+        telefone: "(86) 99819-1415",
+        rede: "Mulheres",
+        celulas: 6,
+        vidas: 43,
+        visitantes: 3,
+        triade: "Sim",
+        aceitaram: 1,
+        univVida: 2,
+        batismo: 2,
+        multiplicar: 0,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Faço, mas não todo mês",
+        potencial: "Compromisso com a célula; tudo que é pra participar na igreja elas estão a ponto",
+        limitacao: "Na realidade a maior limitação está em conseguir ganhar vidas; as vidas vão para a célula mas não querem aceitar Jesus",
+        oficial: true
+      },
+      {
+        id: 16,
+        nome: "Bruna Alencar",
+        telefone: "(86) 99940-0513",
+        rede: "Mulheres",
+        celulas: 4,
+        vidas: 12,
+        visitantes: 8,
+        triade: "Sim",
+        aceitaram: 0,
+        univVida: 1,
+        batismo: 1,
+        multiplicar: 0,
+        ofertando: "Não",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Sim",
+        potencial: "A nossa maior potência está na união / comunhão",
+        limitacao: "A nossa maior limitação está no ganhar vidas",
+        oficial: true
+      },
+      {
+        id: 17,
+        nome: "Elizabete Rodrigues Paulino Brito",
+        telefone: "(86) 99953-5386",
+        rede: "Mulheres",
+        celulas: 4,
+        vidas: 28,
+        visitantes: 3,
+        triade: "Sim",
+        aceitaram: 2,
+        univVida: 1,
+        batismo: 0,
+        multiplicar: 0,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Sim",
+        potencial: "Oração, intercessão contínua e fidelidade",
+        limitacao: "Anfitriã! (dificuldade de lares fixos)",
+        oficial: true
+      },
+      {
+        id: 18,
+        nome: "Francisca de Sousa Silva",
+        telefone: "(86) 98889-2073",
+        rede: "Mulheres",
+        celulas: 3,
+        vidas: 29,
+        visitantes: 2,
+        triade: "Sim",
+        aceitaram: 1,
+        univVida: 3,
+        batismo: 1,
+        multiplicar: 1,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Sim",
+        potencial: "Fidelidade ministerial e serviço alegre",
+        limitacao: "Dificuldade de formar outros líderes porque não querem fazer a escola; também tem umas que não são casadas, só moram junto",
+        oficial: true
+      },
+      {
+        id: 19,
+        nome: "Francinete Pereira de Oliveira",
+        telefone: "(86) 99952-9365",
+        rede: "Mulheres",
+        celulas: 3,
+        vidas: 20,
+        visitantes: 5,
+        triade: "Não (falta uma timóteo)",
+        aceitaram: 4,
+        univVida: 1,
+        batismo: 1,
+        multiplicar: 0,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Sim",
+        potencial: "Unidade, discipulado de perto",
+        limitacao: "Engajamento coletivo quanto a levar mais visitantes à célula, assim como extra-células evangelística em déficit",
+        oficial: true
+      },
+      {
+        id: 20,
+        nome: "Carol Barros",
+        telefone: "(86) 99967-1070",
+        rede: "Mulheres",
+        celulas: 5,
+        vidas: 36,
+        visitantes: 1,
+        triade: "Sim",
+        aceitaram: 2,
+        univVida: 4,
+        batismo: 2,
+        multiplicar: 0,
+        ofertando: "Não",
+        dizimistas: "2 e 3 não",
+        ecd: "Sim",
+        g12: "Não",
+        potencial: "Comunhão e regularidade da célula",
+        limitacao: "Visitação pastoral aos membros",
+        oficial: true
+      },
+      {
+        id: 21,
+        nome: "Klediane Viana da Silva Nascimento",
+        telefone: "(86) 98161-5328",
+        rede: "Mulheres",
+        celulas: 3,
+        vidas: 25,
+        visitantes: 1,
+        triade: "Sim",
+        aceitaram: 1,
+        univVida: 0,
+        batismo: 0,
+        multiplicar: 0,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Sim",
+        potencial: "Oração constante, convite pessoal e evangelização ativa através de redes sociais",
+        limitacao: "Compromisso das pessoas",
+        oficial: true
+      },
+      {
+        id: 22,
+        nome: "Raimundo Nonato da Silva",
+        telefone: "(86) 98853-8946",
+        rede: "Mulheres",
+        celulas: 4,
+        vidas: 28,
+        visitantes: 1,
+        triade: "Sim",
+        aceitaram: 3,
+        univVida: 0,
+        batismo: 0,
+        multiplicar: 0,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Sim",
+        potencial: "Comunhão fervorosa",
+        limitacao: "Dificuldade ao fazer a ECD",
+        oficial: true
+      },
+      {
+        id: 23,
+        nome: "Maria Kurlene C. Monteiro",
+        telefone: "(86) 99412-7753",
+        rede: "Mulheres",
+        celulas: 6,
+        vidas: 93,
+        visitantes: 15,
+        triade: "Não (célula da Ir. Consolação sem anfitriã)",
+        aceitaram: 5,
+        univVida: 4,
+        batismo: 4,
+        multiplicar: 4,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Falho às vezes, mas faço",
+        potencial: "Perseverança inabalável",
+        limitacao: "Pessoas capacitadas, mas não disponíveis para liderar",
+        oficial: true
+      },
+      {
+        id: 24,
+        nome: "Otacília Graziella Pires de Araújo Cabral",
+        telefone: "(86) 98150-1517",
+        rede: "Mulheres",
+        celulas: 5,
+        vidas: 30,
+        visitantes: 2,
+        triade: "Sim",
+        aceitaram: 5,
+        univVida: 1,
+        batismo: 1,
+        multiplicar: 1,
+        ofertando: "Sim",
+        dizimistas: "Sim",
+        ecd: "Sim",
+        g12: "Sim",
+        potencial: "Intercessão constante",
+        limitacao: "No ganhar almas",
+        oficial: true
+      }
+    ];
+
+    // Variável mutável dos líderes carregada da memória ou do padrão
+    let leadersData = [];
+
+    // Variáveis de Autenticação e Controle
+    let isAdminLoggedIn = false;
+    let pendingAdminAction = null;
+    let currentModalLeaderId = null;
+
+    // Inicialização do Banco LocalStorage
+    function initLeadersDatabase() {
+      const stored = localStorage.getItem('bereana_leaders_db_v4');
+      if (stored) {
+        try {
+          leadersData = JSON.parse(stored);
+        } catch(e) {
+          leadersData = JSON.parse(JSON.stringify(DEFAULT_LEADERS_DATA));
+        }
+      } else {
+        leadersData = JSON.parse(JSON.stringify(DEFAULT_LEADERS_DATA));
+        localStorage.setItem('bereana_leaders_db_v4', JSON.stringify(leadersData));
+      }
+    }
+
+    function saveLeadersToStorage() {
+      localStorage.setItem('bereana_leaders_db_v4', JSON.stringify(leadersData));
+      renderSummaryKPIs();
+      renderLeadersGrid();
+      renderLeadersTable();
+      renderTriadeCards();
+      initCharts();
+    }
+
+    // Inicialização da Sessão Administrativa
+    function checkAdminSession() {
+      const auth = sessionStorage.getItem('bereana_admin_session');
+      isAdminLoggedIn = (auth === 'true');
+      updateAdminUI();
+    }
+
+    function updateAdminUI() {
+      const bar = document.getElementById('admin-top-bar');
+      const btnLabel = document.getElementById('btn-admin-label');
+      const btnIcon = document.getElementById('btn-admin-icon');
+
+      if (isAdminLoggedIn) {
+        if (bar) bar.classList.remove('hidden');
+        if (btnLabel) btnLabel.innerText = "Admin Ativo";
+        if (btnIcon) btnIcon.className = "fa-solid fa-unlock text-emerald-300";
+      } else {
+        if (bar) bar.classList.add('hidden');
+        if (btnLabel) btnLabel.innerText = "Acesso Admin";
+        if (btnIcon) btnIcon.className = "fa-solid fa-lock";
+      }
+    }
+
+    function toggleAdminModal() {
+      if (isAdminLoggedIn) {
+        handleAdminLogout();
+      } else {
+        openAdminLoginModal();
+      }
+    }
+
+    function openAdminLoginModal() {
+      const modal = document.getElementById('admin-login-modal');
+      const err = document.getElementById('login-error-msg');
+      const userInput = document.getElementById('admin-input-user');
+      const passInput = document.getElementById('admin-input-pass');
+
+      if (err) err.classList.add('hidden');
+      if (userInput) userInput.value = '';
+      if (passInput) passInput.value = '';
+
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => userInput?.focus(), 100);
+      }
+    }
+
+    function closeAdminLoginModal() {
+      const modal = document.getElementById('admin-login-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+      pendingAdminAction = null;
+    }
+
+    function handleAdminLoginSubmit(e) {
+      e.preventDefault();
+      const user = (document.getElementById('admin-input-user')?.value || '').trim();
+      const pass = (document.getElementById('admin-input-pass')?.value || '').trim();
+      const err = document.getElementById('login-error-msg');
+
+      // Validação das credenciais solicitadas: login bereana / senha bereana
+      if (user.toLowerCase() === 'bereana' && pass === 'bereana') {
+        isAdminLoggedIn = true;
+        sessionStorage.setItem('bereana_admin_session', 'true');
+        closeAdminLoginModal();
+        updateAdminUI();
+        showToast("Administrador autenticado com sucesso!");
+
+        // Executa ação pendente se houver
+        if (typeof pendingAdminAction === 'function') {
+          const fn = pendingAdminAction;
+          pendingAdminAction = null;
+          fn();
+        }
+      } else {
+        if (err) err.classList.remove('hidden');
+      }
+    }
+
+    function handleAdminLogout() {
+      isAdminLoggedIn = false;
+      sessionStorage.removeItem('bereana_admin_session');
+      updateAdminUI();
+      showToast("Você saiu do modo administrador.");
+    }
+
+    // Guardião de ações administrativas
+    function requireAdmin(actionFn) {
+      if (isAdminLoggedIn) {
+        actionFn();
+      } else {
+        pendingAdminAction = actionFn;
+        openAdminLoginModal();
+      }
+    }
+
+    function editCurrentModalLeader() {
+      if (currentModalLeaderId) {
+        closeLeaderModal();
+        openEditLeaderModal(currentModalLeaderId);
+      }
+    }
+
+    function openEditLeaderModal(id) {
+      requireAdmin(() => {
+        const leader = leadersData.find(l => l.id === id);
+        if (!leader) return;
+
+        document.getElementById('edit-modal-title').innerText = `Editar: ${leader.nome}`;
+        document.getElementById('edit-leader-id').value = leader.id;
+        document.getElementById('edit-leader-nome').value = leader.nome;
+        document.getElementById('edit-leader-rede').value = leader.rede;
+        document.getElementById('edit-leader-telefone').value = leader.telefone || '';
+        document.getElementById('edit-leader-oficial').checked = !!leader.oficial;
+
+        document.getElementById('edit-leader-celulas').value = leader.celulas;
+        document.getElementById('edit-leader-vidas').value = leader.vidas;
+        document.getElementById('edit-leader-visitantes').value = leader.visitantes;
+        document.getElementById('edit-leader-aceitaram').value = leader.aceitaram;
+        document.getElementById('edit-leader-univ').value = leader.univVida;
+        document.getElementById('edit-leader-batismo').value = leader.batismo;
+        document.getElementById('edit-leader-multiplica').value = leader.multiplicar;
+
+        document.getElementById('edit-leader-triade').value = leader.triade;
+        document.getElementById('edit-leader-ofertando').value = leader.ofertando;
+        document.getElementById('edit-leader-dizimistas').value = leader.dizimistas;
+        document.getElementById('edit-leader-ecd').value = leader.ecd;
+        document.getElementById('edit-leader-g12').value = leader.g12;
+
+        document.getElementById('edit-leader-potencial').value = leader.potencial;
+        document.getElementById('edit-leader-limitacao').value = leader.limitacao;
+
+        const btnDel = document.getElementById('btn-delete-leader');
+        if (btnDel) btnDel.classList.remove('hidden');
+
+        const modal = document.getElementById('leader-edit-modal');
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        }
+      });
+    }
+
+    function openNewLeaderModal() {
+      requireAdmin(() => {
+        document.getElementById('edit-modal-title').innerText = "Cadastrar Nova Descendência";
+        document.getElementById('edit-leader-id').value = "";
+        document.getElementById('edit-leader-nome').value = "";
+        document.getElementById('edit-leader-rede').value = "Homens";
+        document.getElementById('edit-leader-telefone').value = "";
+        document.getElementById('edit-leader-oficial').checked = true;
+
+        document.getElementById('edit-leader-celulas').value = 1;
+        document.getElementById('edit-leader-vidas').value = 7;
+        document.getElementById('edit-leader-visitantes').value = 1;
+        document.getElementById('edit-leader-aceitaram').value = 1;
+        document.getElementById('edit-leader-univ').value = 0;
+        document.getElementById('edit-leader-batismo').value = 0;
+        document.getElementById('edit-leader-multiplica').value = 0;
+
+        document.getElementById('edit-leader-triade').value = "Sim";
+        document.getElementById('edit-leader-ofertando').value = "Sim";
+        document.getElementById('edit-leader-dizimistas').value = "Sim";
+        document.getElementById('edit-leader-ecd').value = "Sim";
+        document.getElementById('edit-leader-g12').value = "Sim";
+
+        document.getElementById('edit-leader-potencial').value = "";
+        document.getElementById('edit-leader-limitacao').value = "";
+
+        const btnDel = document.getElementById('btn-delete-leader');
+        if (btnDel) btnDel.classList.add('hidden');
+
+        const modal = document.getElementById('leader-edit-modal');
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        }
+      });
+    }
+
+    function closeLeaderEditModal() {
+      const modal = document.getElementById('leader-edit-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    function saveLeaderForm(e) {
+      e.preventDefault();
+      const idVal = document.getElementById('edit-leader-id').value;
+      const isNew = !idVal;
+
+      const payload = {
+        id: isNew ? Date.now() : parseInt(idVal),
+        nome: document.getElementById('edit-leader-nome').value.trim(),
+        rede: document.getElementById('edit-leader-rede').value,
+        telefone: document.getElementById('edit-leader-telefone').value.trim() || "(86) Disponível",
+        oficial: document.getElementById('edit-leader-oficial').checked,
+        celulas: parseInt(document.getElementById('edit-leader-celulas').value) || 0,
+        vidas: parseInt(document.getElementById('edit-leader-vidas').value) || 0,
+        visitantes: parseFloat(document.getElementById('edit-leader-visitantes').value) || 0,
+        aceitaram: parseInt(document.getElementById('edit-leader-aceitaram').value) || 0,
+        univVida: parseInt(document.getElementById('edit-leader-univ').value) || 0,
+        batismo: parseInt(document.getElementById('edit-leader-batismo').value) || 0,
+        multiplicar: parseInt(document.getElementById('edit-leader-multiplica').value) || 0,
+        triade: document.getElementById('edit-leader-triade').value.trim() || "Sim",
+        ofertando: document.getElementById('edit-leader-ofertando').value.trim() || "Sim",
+        dizimistas: document.getElementById('edit-leader-dizimistas').value.trim() || "Sim",
+        ecd: document.getElementById('edit-leader-ecd').value,
+        g12: document.getElementById('edit-leader-g12').value.trim() || "Sim",
+        potencial: document.getElementById('edit-leader-potencial').value.trim() || "Comunhão e ensino",
+        limitacao: document.getElementById('edit-leader-limitacao').value.trim() || "Ganhar novas vidas"
+      };
+
+      if (isNew) {
+        leadersData.push(payload);
+        showToast("Nova descendência cadastrada com sucesso!");
+      } else {
+        const idx = leadersData.findIndex(l => l.id === payload.id);
+        if (idx !== -1) {
+          leadersData[idx] = payload;
+          showToast(`Ficha de "${payload.nome}" atualizada!`);
+        }
+      }
+
+      saveLeadersToStorage();
+      closeLeaderEditModal();
+    }
+
+    function deleteCurrentLeader() {
+      const idVal = document.getElementById('edit-leader-id').value;
+      if (!idVal) return;
+      const id = parseInt(idVal);
+
+      leadersData = leadersData.filter(l => l.id !== id);
+      saveLeadersToStorage();
+      closeLeaderEditModal();
+      showToast("Descendência excluída com sucesso.");
+    }
+
+    function resetDefaultData() {
+      requireAdmin(() => {
+        leadersData = JSON.parse(JSON.stringify(DEFAULT_LEADERS_DATA));
+        saveLeadersToStorage();
+        showToast("Dados originais das 24 fichas restaurados com sucesso!");
+      });
+    }
+
+    function exportDataJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(leadersData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `bereana_celulas_backup_${new Date().toISOString().slice(0, 10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast("Backup baixado com sucesso!");
+    }
+
+    function importDataJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          const parsed = JSON.parse(event.target.result);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            leadersData = parsed;
+            saveLeadersToStorage();
+            showToast("Dados restaurados do arquivo JSON!");
+          } else {
+            showToast("Formato de arquivo JSON inválido.");
+          }
+        } catch(err) {
+          showToast("Erro ao processar o arquivo de backup.");
+        }
+      };
+      reader.readAsText(file);
+    }
+    ];
+
+    // Metas Estratégicas 2027
+    let strategicGoals = [
+      {
+        id: 1,
+        titulo: "Ofensiva Especial de Evangelismo e Discipulado no 'Ganhar'",
+        eixo: "consolidacao",
+        rede: "Geral",
+        prazo: "Q1",
+        progresso: 25,
+        status: "Em Andamento",
+        metrica: "Workshops de abordagem pessoal para superar o bloqueio de conversões"
+      },
+      {
+        id: 2,
+        titulo: "Consagrar 8 Novas Células no Culto de 07 de Novembro",
+        eixo: "multiplicacao",
+        rede: "Geral",
+        prazo: "Q4",
+        progresso: 85,
+        status: "Em Andamento",
+        metrica: "8 células confirmadas (Walcidio 2, Otacília 1, Marta 1, Karoline 1, etc.)"
+      },
+      {
+        id: 3,
+        titulo: "Alinhamento Obrigatório do Discipulado Semanal G12",
+        eixo: "fidelidade",
+        rede: "Homens",
+        prazo: "Q1",
+        progresso: 50,
+        status: "Em Andamento",
+        metrica: "Regularização de reuniões semanais de líderes em multiplicação (ex: Walcidio)"
+      },
+      {
+        id: 4,
+        titulo: "Campanha 'Meu Lar, Um Altar' para Anfitriões Titulares",
+        eixo: "triade",
+        rede: "Geral",
+        prazo: "Q2",
+        progresso: 40,
+        status: "Em Andamento",
+        metrica: "Garantir lares fixos para Elber Conceição e células femininas"
+      },
+      {
+        id: 5,
+        titulo: "Consagrar e Treinar 48 Novos Timóteos Oficiais",
+        eixo: "triade",
+        rede: "Geral",
+        prazo: "Q1",
+        progresso: 65,
+        status: "Em Andamento",
+        metrica: "31 / 48 timóteos com termo assinado"
+      },
+      {
+        id: 6,
+        titulo: "Regularização Familiar & Casamento Coletivo Pastoral",
+        eixo: "consolidacao",
+        rede: "Mulheres",
+        prazo: "Q2",
+        progresso: 30,
+        status: "Em Andamento",
+        metrica: "12 casais cadastrados para legalização civil/religiosa"
+      },
+      {
+        id: 7,
+        titulo: "Grande Batismo das Águas de Primavera",
+        eixo: "consolidacao",
+        rede: "Geral",
+        prazo: "Q3",
+        progresso: 35,
+        status: "Em Andamento",
+        metrica: "52 vidas atualmente na Univ. da Vida e 34 aptas ao batismo"
+      },
+      {
+        id: 8,
+        titulo: "Fidelidade em Ofertas e Dízimos de Célula a 100%",
+        eixo: "fidelidade",
+        rede: "Geral",
+        prazo: "Q1",
+        progresso: 88,
+        status: "Em Andamento",
+        metrica: "22 de 24 líderes plenamente regularizados"
+      }
+    ];
+
+    // Variáveis de controle de visualização
+    let currentCategoryFilter = 'all';
+    let currentViewMode = 'grid';
+    let currentGoalAxisFilter = 'all';
+    let currentGrowthScenario = 'realista';
+
+    // Instâncias de Gráficos Chart.js
+    let chartFunilInstance = null;
+    let chartComparativoInstance = null;
+    let chartSaudeInstance = null;
+    let chartProjecao2027Instance = null;
+    let chartRadarMetasInstance = null;
+
+    // Utilitário seguro para atualização de texto no DOM
+    function safeSetText(id, val) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.innerText = val;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initLeadersDatabase();
+      checkAdminSession();
+      renderSummaryKPIs();
+      renderLeadersGrid();
+      renderLeadersTable();
+      renderTriadeCards();
+      renderGoalsList();
+      initCharts();
+      updateSimulator();
+    });
+
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+      setTimeout(() => {
+        initCharts();
+      }, 100);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('border-indigo-600', 'text-indigo-600', 'dark:text-indigo-400');
+        btn.classList.add('border-transparent', 'text-slate-500', 'dark:text-slate-400');
+      });
+
+      const target = document.getElementById(`tab-${tabId}`);
+      const btn = document.getElementById(`nav-${tabId}`);
+      if (target) target.classList.remove('hidden');
+      if (btn) {
+        btn.classList.remove('border-transparent', 'text-slate-500', 'dark:text-slate-400');
+        btn.classList.add('border-indigo-600', 'text-indigo-600', 'dark:text-indigo-400');
+      }
+
+      if (tabId === 'planejamento') {
+        setTimeout(() => {
+          renderPlanningCharts();
+        }, 50);
+      }
+    }
+
+    function setFilterCategory(cat) {
+      currentCategoryFilter = cat;
+      ['all', 'homens', 'mulheres'].forEach(c => {
+        const btn = document.getElementById(`btn-filter-${c}`);
+        if (btn) {
+          if ((c === 'all' && cat === 'all') || (c === 'homens' && cat === 'Homens') || (c === 'mulheres' && cat === 'Mulheres')) {
+            btn.className = "px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-700 shadow-xs text-indigo-600 dark:text-indigo-400 font-bold transition";
+          } else {
+            btn.className = "px-3.5 py-1.5 rounded-xl text-slate-600 dark:text-slate-300 hover:text-indigo-600 transition";
+          }
+        }
+      });
+
+      renderSummaryKPIs();
+      renderLeadersGrid();
+      renderLeadersTable();
+    }
+
+    function renderSummaryKPIs() {
+      const filtered = leadersData.filter(item => {
+        if (currentCategoryFilter === 'all') return true;
+        return item.rede === currentCategoryFilter;
+      });
+
+      const totalCelulas = filtered.reduce((acc, curr) => acc + (Number(curr.celulas) || 0), 0);
+      const totalVidas = filtered.reduce((acc, curr) => acc + (Number(curr.vidas) || 0), 0);
+      const totalAceitaram = filtered.reduce((acc, curr) => acc + (Number(curr.aceitaram) || 0), 0);
+      const totalMulti = filtered.reduce((acc, curr) => acc + (Number(curr.multiplicar) || 0), 0);
+      const totalUniv = filtered.reduce((acc, curr) => acc + (Number(curr.univVida) || 0), 0);
+
+      safeSetText('top-counter-celulas', totalCelulas);
+      safeSetText('top-counter-vidas', totalVidas);
+
+      safeSetText('kpi-celulas', totalCelulas);
+      safeSetText('kpi-vidas', totalVidas);
+      safeSetText('kpi-conversoes', totalAceitaram);
+      safeSetText('kpi-multiplicacao', totalMulti);
+      safeSetText('kpi-univ', totalUniv);
+    }
+
+    function renderLeadersGrid() {
+      const container = document.getElementById('leaders-grid');
+      if (!container) return;
+      const search = (document.getElementById('search-leader')?.value || '').toLowerCase();
+      
+      const filtered = leadersData.filter(item => {
+        const matchesCategory = (currentCategoryFilter === 'all' || item.rede === currentCategoryFilter);
+        const matchesSearch = item.nome.toLowerCase().includes(search) || 
+                              item.potencial.toLowerCase().includes(search) || 
+                              item.limitacao.toLowerCase().includes(search);
+        return matchesCategory && matchesSearch;
+      });
+
+      container.innerHTML = filtered.map(l => {
+        const initials = l.nome.split(' ').map(n => n[0]).slice(0, 2).join('');
+        const isOfficialBadge = l.oficial 
+          ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800">Ficha Física</span>` 
+          : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">G12 Base</span>`;
+
+        const triadeHealthy = !l.triade.toLowerCase().includes('não') && !l.triade.toLowerCase().includes('falta');
+
+        return `
+          <div class="glass-card p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col justify-between">
+            <div>
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-11 h-11 rounded-2xl ${l.rede === 'Homens' ? 'bg-sky-600' : 'bg-rose-500'} text-white font-extrabold flex items-center justify-center text-sm shadow-md">
+                    ${initials}
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-slate-900 dark:text-white text-sm line-clamp-1">${l.nome}</h4>
+                    <span class="text-xs text-slate-400 flex items-center gap-1.5">
+                      <i class="fa-solid ${l.rede === 'Homens' ? 'fa-mars text-sky-500' : 'fa-venus text-rose-400'}"></i>
+                      ${l.rede} • ${l.telefone}
+                    </span>
+                  </div>
+                </div>
+                ${isOfficialBadge}
+              </div>
+
+              <div class="grid grid-cols-4 gap-1.5 text-center my-3 p-2 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-700/60">
+                <div>
+                  <span class="block text-sm font-extrabold text-slate-900 dark:text-white">${l.celulas}</span>
+                  <span class="text-[9px] uppercase font-bold text-slate-400">Células</span>
+                </div>
+                <div>
+                  <span class="block text-sm font-extrabold text-indigo-600 dark:text-indigo-400">${l.vidas}</span>
+                  <span class="text-[9px] uppercase font-bold text-slate-400">Vidas</span>
+                </div>
+                <div>
+                  <span class="block text-sm font-extrabold text-amber-500">${l.visitantes}/s</span>
+                  <span class="text-[9px] uppercase font-bold text-slate-400">Visit.</span>
+                </div>
+                <div>
+                  <span class="block text-sm font-extrabold ${l.multiplicar > 0 ? 'text-emerald-500' : 'text-slate-400'}">${l.multiplicar}</span>
+                  <span class="text-[9px] uppercase font-bold text-slate-400">Multip.</span>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-1.5 text-[10px] font-semibold my-2">
+                <span class="px-2 py-0.5 rounded-md ${triadeHealthy ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'}">
+                  Tríade: ${triadeHealthy ? 'OK' : 'Incompleta'}
+                </span>
+                <span class="px-2 py-0.5 rounded-md ${l.ecd === 'Sim' ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300' : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300'}">
+                  ECD: ${l.ecd}
+                </span>
+                <span class="px-2 py-0.5 rounded-md ${l.ofertando.toLowerCase().includes('não') ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}">
+                  Oferta: ${l.ofertando}
+                </span>
+              </div>
+
+              <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 space-y-1">
+                <p class="line-clamp-1"><strong class="text-emerald-600 dark:text-emerald-400">Potencial:</strong> ${l.potencial}</p>
+                <p class="line-clamp-1"><strong class="text-rose-500">Limitação:</strong> ${l.limitacao}</p>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2">
+              <button onclick="openLeaderModal(${l.id})" class="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 text-slate-700 dark:text-slate-300 transition flex items-center justify-center gap-1.5">
+                <span>Ver Ficha</span>
+                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </button>
+              <button onclick="openEditLeaderModal(${l.id})" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white transition flex items-center gap-1" title="Editar dados desta descendência">
+                <i class="fa-solid fa-pen-to-square"></i>
+                <span class="hidden sm:inline">Editar</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderLeadersTable() {
+      const tbody = document.getElementById('leaders-table-body');
+      if (!tbody) return;
+
+      const search = (document.getElementById('search-leader')?.value || '').toLowerCase();
+      
+      const filtered = leadersData.filter(item => {
+        const matchesCategory = (currentCategoryFilter === 'all' || item.rede === currentCategoryFilter);
+        const matchesSearch = item.nome.toLowerCase().includes(search);
+        return matchesCategory && matchesSearch;
+      });
+
+      tbody.innerHTML = filtered.map(l => `
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+          <td class="p-3.5 font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full ${l.rede === 'Homens' ? 'bg-sky-500' : 'bg-rose-500'}"></span>
+            ${l.nome}
+          </td>
+          <td class="p-3.5 text-center text-xs font-semibold ${l.rede === 'Homens' ? 'text-sky-600 dark:text-sky-400' : 'text-rose-500'}">${l.rede}</td>
+          <td class="p-3.5 text-center font-bold">${l.celulas}</td>
+          <td class="p-3.5 text-center font-bold text-indigo-600 dark:text-indigo-400">${l.vidas}</td>
+          <td class="p-3.5 text-center">${l.visitantes}</td>
+          <td class="p-3.5 text-center font-semibold text-emerald-600">${l.aceitaram}</td>
+          <td class="p-3.5 text-center">${l.univVida}</td>
+          <td class="p-3.5 text-center">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${l.ecd === 'Sim' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}">${l.ecd}</span>
+          </td>
+          <td class="p-3.5 text-center font-bold ${l.multiplicar > 0 ? 'text-emerald-600' : 'text-slate-400'}">${l.multiplicar}</td>
+          <td class="p-3.5 text-right whitespace-nowrap space-x-1">
+            <button onclick="openLeaderModal(${l.id})" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-600 hover:text-white transition">Ver</button>
+            <button onclick="openEditLeaderModal(${l.id})" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white transition"><i class="fa-solid fa-pen-to-square mr-1"></i>Editar</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function setViewMode(mode) {
+      currentViewMode = mode;
+      const grid = document.getElementById('leaders-grid');
+      const table = document.getElementById('leaders-table-container');
+      const btnGrid = document.getElementById('btn-view-grid');
+      const btnTable = document.getElementById('btn-view-table');
+
+      if (grid) {
+        if (mode === 'grid') grid.classList.remove('hidden');
+        else grid.classList.add('hidden');
+      }
+      if (table) {
+        if (mode === 'grid') table.classList.add('hidden');
+        else table.classList.remove('hidden');
+      }
+      if (btnGrid) {
+        if (mode === 'grid') {
+          btnGrid.className = "p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800";
+        } else {
+          btnGrid.className = "p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-700";
+        }
+      }
+      if (btnTable) {
+        if (mode === 'table') {
+          btnTable.className = "p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800";
+        } else {
+          btnTable.className = "p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-700";
+        }
+      }
+    }
+
+    function renderTriadeCards() {
+      const container = document.getElementById('triade-cards-container');
+      if (!container) return;
+      container.innerHTML = leadersData.map(l => {
+        const hasWarning = l.triade.toLowerCase().includes('não') || 
+                           l.triade.toLowerCase().includes('somente uma não tem') ||
+                           l.ofertando.toLowerCase().includes('não') || 
+                           l.g12.toLowerCase().includes('não') || 
+                           l.g12.toLowerCase().includes('esporad');
+
+        return `
+          <div class="p-4 rounded-2xl border ${hasWarning ? 'border-amber-200 dark:border-amber-900/60 bg-amber-50/20 dark:bg-amber-950/10' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40'} flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <h5 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                    ${l.nome}
+                    ${l.oficial ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">Auditado</span>' : ''}
+                  </h5>
+                  <span class="text-xs text-slate-400">${l.rede} • ${l.celulas} células ativas • ${l.vidas} discípulos</span>
+                </div>
+                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${hasWarning ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'}">
+                  ${hasWarning ? 'Ponto de Atenção' : 'Alinhado'}
+                </span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300 mt-2">
+                <div class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-users-gear text-indigo-500"></i>
+                  <span>Tríade: <strong class="${l.triade.toLowerCase().includes('não') || l.triade.toLowerCase().includes('somente') ? 'text-rose-500' : ''}">${l.triade}</strong></span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-hand-holding-dollar text-emerald-500"></i>
+                  <span>Ofertas: <strong class="${l.ofertando.toLowerCase().includes('não') ? 'text-rose-500' : ''}">${l.ofertando}</strong></span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-graduation-cap text-sky-500"></i>
+                  <span>Escola ECD: <strong>${l.ecd}</strong></span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-clock-rotate-left text-purple-500"></i>
+                  <span>G12 Semanal: <strong class="${l.g12.toLowerCase().includes('não') ? 'text-rose-500' : ''}">${l.g12}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-500">
+              <span class="font-semibold text-slate-700 dark:text-slate-300">Gargalo relatado:</span> ${l.limitacao}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Modal Leader Details
+    function openLeaderModal(id) {
+      const leader = leadersData.find(l => l.id === id);
+      if (!leader) return;
+
+      currentModalLeaderId = leader.id;
+
+      const avatar = document.getElementById('modal-avatar');
+      if (avatar) {
+        avatar.innerText = leader.nome.split(' ').map(n => n[0]).slice(0, 2).join('');
+        avatar.className = `w-12 h-12 rounded-2xl ${leader.rede === 'Homens' ? 'bg-sky-600' : 'bg-rose-500'} text-white font-bold text-lg flex items-center justify-center`;
+      }
+      
+      safeSetText('modal-name', leader.nome);
+      safeSetText('modal-rede', `Rede de ${leader.rede} • Contato: ${leader.telefone}`);
+      safeSetText('modal-cel', leader.celulas);
+      safeSetText('modal-vidas', leader.vidas);
+      safeSetText('modal-visit', leader.visitantes);
+      safeSetText('modal-multi', leader.multiplicar);
+
+      safeSetText('modal-triade-status', leader.triade);
+      safeSetText('modal-oferta', leader.ofertando);
+      safeSetText('modal-dizimo', leader.dizimistas);
+      safeSetText('modal-ecd', leader.ecd);
+      safeSetText('modal-g12', leader.g12);
+
+      safeSetText('modal-potencial', `"${leader.potencial}"`);
+      safeSetText('modal-limitacao', `"${leader.limitacao}"`);
+
+      const modal = document.getElementById('leader-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+    }
+
+    function closeLeaderModal() {
+      const modal = document.getElementById('leader-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    // --- GESTÃO DE METAS & OKRs ---
+    function renderGoalsList() {
+      const container = document.getElementById('goals-container');
+      const badgeTotal = document.getElementById('badge-total-metas');
+      if (!container) return;
+
+      const filtered = strategicGoals.filter(g => {
+        if (currentGoalAxisFilter === 'all') return true;
+        return g.eixo === currentGoalAxisFilter;
+      });
+
+      if (badgeTotal) badgeTotal.innerText = `${filtered.length} Metas`;
+
+      container.innerHTML = filtered.map(g => {
+        const statusColors = {
+          'Planejado': 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-700',
+          'Em Andamento': 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300 dark:border-amber-800',
+          'Concluído': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+        };
+
+        const axisLabels = {
+          'multiplicacao': { label: 'Multiplicação', icon: 'fa-seedling', color: 'text-purple-500' },
+          'triade': { label: 'Tríade & Liderança', icon: 'fa-users-gear', color: 'text-indigo-500' },
+          'consolidacao': { label: 'Consolidação & Ganhar', icon: 'fa-water', color: 'text-sky-500' },
+          'fidelidade': { label: 'Fidelidade G12', icon: 'fa-coins', color: 'text-emerald-500' }
+        };
+
+        const axisInfo = axisLabels[g.eixo] || { label: 'Geral', icon: 'fa-star', color: 'text-amber-500' };
+
+        return `
+          <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40 shadow-xs hover:shadow-md transition space-y-3 flex flex-col justify-between">
+            <div>
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid ${axisInfo.icon} ${axisInfo.color} text-sm"></i>
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${axisInfo.label}</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-semibold">${g.prazo}</span>
+                </div>
+                <button onclick="toggleGoalStatus(${g.id})" class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusColors[g.status]} transition hover:opacity-80" title="Clique para alternar o status da meta">
+                  ${g.status}
+                </button>
+              </div>
+
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white mt-1.5 leading-snug">${g.titulo}</h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"><strong class="text-slate-700 dark:text-slate-300">Alvo:</strong> ${g.metrica}</p>
+            </div>
+
+            <div class="space-y-2 pt-1">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-[11px] text-slate-400">Responsável: <strong class="text-indigo-600 dark:text-indigo-400">${g.rede}</strong></span>
+                <span class="font-black text-slate-900 dark:text-white">${g.progresso}%</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-300 ${g.progresso >= 100 ? 'bg-emerald-500' : (g.progresso >= 50 ? 'bg-indigo-600' : 'bg-amber-500')}" style="width: ${g.progresso}%"></div>
+              </div>
+
+              <div class="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/80 text-[11px]">
+                <div class="flex items-center gap-1">
+                  <button onclick="adjustGoalProgress(${g.id}, -10)" class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 font-bold flex items-center justify-center">-10%</button>
+                  <button onclick="adjustGoalProgress(${g.id}, 10)" class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 font-bold flex items-center justify-center">+10%</button>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="editGoalModal(${g.id})" class="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">Editar</button>
+                  <button onclick="deleteGoal(${g.id})" class="text-rose-500 hover:underline"><i class="fa-solid fa-trash-can text-[10px]"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterGoalAxis(axis) {
+      currentGoalAxisFilter = axis;
+      const buttons = ['all', 'multiplicacao', 'triade', 'consolidacao', 'fidelidade'];
+      buttons.forEach(b => {
+        const btn = document.getElementById(`btn-axis-${b}`);
+        if (btn) {
+          if (b === axis) {
+            btn.className = "px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs font-bold";
+          } else {
+            btn.className = "px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-indigo-600";
+          }
+        }
+      });
+      renderGoalsList();
+    }
+
+    function toggleGoalStatus(id) {
+      const goal = strategicGoals.find(g => g.id === id);
+      if (!goal) return;
+
+      if (goal.status === 'Planejado') {
+        goal.status = 'Em Andamento';
+      } else if (goal.status === 'Em Andamento') {
+        goal.status = 'Concluído';
+        goal.progresso = 100;
+      } else {
+        goal.status = 'Planejado';
+        goal.progresso = 0;
+      }
+      renderGoalsList();
+      showToast(`Status da meta atualizado para "${goal.status}"`);
+    }
+
+    function adjustGoalProgress(id, delta) {
+      const goal = strategicGoals.find(g => g.id === id);
+      if (!goal) return;
+
+      goal.progresso = Math.min(100, Math.max(0, goal.progresso + delta));
+      if (goal.progresso === 100) goal.status = 'Concluído';
+      else if (goal.progresso > 0) goal.status = 'Em Andamento';
+      else goal.status = 'Planejado';
+
+      renderGoalsList();
+      showToast(`Progresso ajustado para ${goal.progresso}%`);
+    }
+
+    function openNewGoalModal() {
+      document.getElementById('goal-modal-title').innerText = "Cadastrar Nova Meta Estratégica";
+      document.getElementById('goal-form-id').value = "";
+      document.getElementById('goal-form-titulo').value = "";
+      document.getElementById('goal-form-eixo').value = "consolidacao";
+      document.getElementById('goal-form-rede').value = "Geral";
+      document.getElementById('goal-form-prazo').value = "Q1";
+      document.getElementById('goal-form-progresso').value = 0;
+      document.getElementById('goal-form-status').value = "Planejado";
+      document.getElementById('goal-form-metrica').value = "";
+
+      const modal = document.getElementById('goal-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function editGoalModal(id) {
+      const goal = strategicGoals.find(g => g.id === id);
+      if (!goal) return;
+
+      document.getElementById('goal-modal-title').innerText = "Editar Meta Estratégica";
+      document.getElementById('goal-form-id').value = goal.id;
+      document.getElementById('goal-form-titulo').value = goal.titulo;
+      document.getElementById('goal-form-eixo').value = goal.eixo;
+      document.getElementById('goal-form-rede').value = goal.rede;
+      document.getElementById('goal-form-prazo').value = goal.prazo;
+      document.getElementById('goal-form-progresso').value = goal.progresso;
+      document.getElementById('goal-form-status').value = goal.status;
+      document.getElementById('goal-form-metrica').value = goal.metrica;
+
+      const modal = document.getElementById('goal-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeGoalModal() {
+      const modal = document.getElementById('goal-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function saveGoal(e) {
+      e.preventDefault();
+      const idVal = document.getElementById('goal-form-id').value;
+      const titulo = document.getElementById('goal-form-titulo').value.trim();
+      const eixo = document.getElementById('goal-form-eixo').value;
+      const rede = document.getElementById('goal-form-rede').value;
+      const prazo = document.getElementById('goal-form-prazo').value;
+      const progresso = parseInt(document.getElementById('goal-form-progresso').value) || 0;
+      const status = document.getElementById('goal-form-status').value;
+      const metrica = document.getElementById('goal-form-metrica').value.trim() || 'Alvo em definição';
+
+      if (!titulo) return;
+
+      if (idVal) {
+        const goal = strategicGoals.find(g => g.id === parseInt(idVal));
+        if (goal) {
+          goal.titulo = titulo;
+          goal.eixo = eixo;
+          goal.rede = rede;
+          goal.prazo = prazo;
+          goal.progresso = progresso;
+          goal.status = status;
+          goal.metrica = metrica;
+          showToast("Meta atualizada com sucesso!");
+        }
+      } else {
+        const newGoal = {
+          id: Date.now(),
+          titulo,
+          eixo,
+          rede,
+          prazo,
+          progresso,
+          status,
+          metrica
+        };
+        strategicGoals.unshift(newGoal);
+        showToast("Nova meta adicionada ao planejamento!");
+      }
+
+      closeGoalModal();
+      renderGoalsList();
+    }
+
+    function deleteGoal(id) {
+      strategicGoals = strategicGoals.filter(g => g.id !== id);
+      renderGoalsList();
+      showToast("Meta removida.");
+    }
+
+    function openConfigModal() {
+      const modal = document.getElementById('config-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeConfigModal() {
+      const modal = document.getElementById('config-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function saveGlobalConfigs(e) {
+      e.preventDefault();
+      const cel = document.getElementById('cfg-meta-celulas').value;
+      const vid = document.getElementById('cfg-meta-vidas').value;
+      const bat = document.getElementById('cfg-meta-batismos').value;
+      const ecd = document.getElementById('cfg-meta-ecd').value;
+
+      document.getElementById('target-display-celulas').innerText = cel;
+      document.getElementById('target-display-vidas').innerText = parseInt(vid).toLocaleString('pt-BR');
+      document.getElementById('target-display-batismos').innerText = bat;
+      document.getElementById('target-display-ecd').innerText = ecd;
+
+      closeConfigModal();
+      renderPlanningCharts();
+      showToast("Alvos globais 2027 atualizados!");
+    }
+
+    function updateSimulator() {
+      const multiEl = document.getElementById('sim-multi');
+      const membrosEl = document.getElementById('sim-membros');
+      const batismoEl = document.getElementById('sim-batismo');
+      if (!multiEl || !membrosEl || !batismoEl) return;
+
+      const multi = parseInt(multiEl.value) || 2;
+      const membros = parseInt(membrosEl.value) || 10;
+      const batismoPct = parseInt(batismoEl.value) || 15;
+
+      safeSetText('sim-multi-val', `${multi} ${multi === 1 ? 'nova' : 'novas'}`);
+      safeSetText('sim-membros-val', `${membros} pessoas`);
+      safeSetText('sim-batismo-val', `${batismoPct}%`);
+
+      const celulasAtuais = 91;
+      const novasCelulas = 24 * multi;
+      const totalCelulas2027 = celulasAtuais + novasCelulas;
+      const totalVidas2027 = totalCelulas2027 * membros;
+      const totalBatismosCalc = Math.round((totalVidas2027 * batismoPct) / 100);
+
+      safeSetText('sim-res-celulas', totalCelulas2027);
+      safeSetText('sim-res-vidas', totalVidas2027.toLocaleString('pt-BR'));
+
+      safeSetText('target-display-celulas', totalCelulas2027);
+      safeSetText('target-display-vidas', totalVidas2027.toLocaleString('pt-BR'));
+      safeSetText('target-display-batismos', totalBatismosCalc);
+
+      renderPlanningCharts();
+    }
+
+    function resetSimulator() {
+      document.getElementById('sim-multi').value = 2;
+      document.getElementById('sim-membros').value = 10;
+      document.getElementById('sim-batismo').value = 15;
+      updateSimulator();
+      showToast("Simulador redefinido para padrão.");
+    }
+
+    function setGrowthScenario(scen) {
+      currentGrowthScenario = scen;
+      const btnR = document.getElementById('btn-scen-realista');
+      const btnO = document.getElementById('btn-scen-otimista');
+
+      if (scen === 'realista') {
+        btnR.className = "px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs";
+        btnO.className = "px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-400 hover:text-indigo-600";
+        document.getElementById('scen-projection-label').innerText = "Meta Q4/2027: 139 Células";
+      } else {
+        btnO.className = "px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs";
+        btnR.className = "px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-400 hover:text-indigo-600";
+        document.getElementById('scen-projection-label').innerText = "Meta Q4/2027 (Otimista): 165 Células";
+      }
+      renderPlanningCharts();
+    }
+
+    function copyActionPlanSummary() {
+      const celulas = document.getElementById('target-display-celulas').innerText;
+      const vidas = document.getElementById('target-display-vidas').innerText;
+      const batismos = document.getElementById('target-display-batismos').innerText;
+
+      const summary = `*PLANO ESTRATÉGICO BEREANA 2026-2027 - G12 CÉLULAS*
+---------------------------------------------
+📊 Células Ativas Auditadas: 91 células (35 Homens • 56 Mulheres)
+👥 Almas Alcançadas: 663 discípulos
+🌱 Em Multiplicação (07/Nov): 8 novas células
+🌊 Previsão de Batismos 2027: ${batismos} vidas
+🎯 Meta Consolidada 2027: ${celulas} células
+
+*DIAGNÓSTICO PASTORAL URGENTE:*
+• Gargalo Coletivo: Ganhar Vidas (mencionado pela maioria dos líderes)
+• Regularização de Discipulado G12 Semanal para líderes multiplicadores
+• Cadastro de Anfitriões e Lares Fixos
+
+Secretaria de Células • Igreja Batista Nacional Bereana`;
+
+      const tempTextArea = document.createElement("textarea");
+      tempTextArea.value = summary;
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      try {
+        document.execCommand('copy');
+        showToast("Resumo copiado para a área de transferência!");
+      } catch (err) {
+        showToast("Erro ao copiar. Selecione o texto manualmente.");
+      }
+      document.body.removeChild(tempTextArea);
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = "bg-slate-900 text-white text-xs px-4 py-2.5 rounded-2xl shadow-xl border border-slate-700 flex items-center gap-2 pointer-events-auto transform translate-y-2 opacity-0 transition-all duration-300";
+      toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> <span>${msg}</span>`;
+
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // --- RENDERIZAÇÃO DOS GRÁFICOS CHART.JS ---
+    function initCharts() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const textColor = isDark ? '#94a3b8' : '#64748b';
+      const gridColor = isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(226, 232, 240, 0.8)';
+
+      // Chart 1: Funil de Consolidação Espiritual
+      const ctxFunil = document.getElementById('chartFunil');
+      if (ctxFunil) {
+        if (chartFunilInstance) chartFunilInstance.destroy();
+
+        const totalVisitantesSemana = leadersData.reduce((a, b) => a + (Number(b.visitantes) || 0), 0);
+        const totalAceitaram = leadersData.reduce((a, b) => a + (Number(b.aceitaram) || 0), 0);
+        const totalUnivVida = leadersData.reduce((a, b) => a + (Number(b.univVida) || 0), 0);
+        const totalBatismo = leadersData.reduce((a, b) => a + (Number(b.batismo) || 0), 0);
+
+        chartFunilInstance = new Chart(ctxFunil, {
+          type: 'bar',
+          data: {
+            labels: ['Visitantes/Sem', 'Aceitaram Cristo', 'Univ. da Vida', 'Batismo Próx.'],
+            datasets: [{
+              label: 'Vidas',
+              data: [totalVisitantesSemana, totalAceitaram, totalUnivVida, totalBatismo],
+              backgroundColor: [
+                'rgba(59, 130, 246, 0.85)',
+                'rgba(245, 158, 11, 0.85)',
+                'rgba(16, 185, 129, 0.85)',
+                'rgba(139, 92, 246, 0.85)'
+              ],
+              borderRadius: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { color: textColor, font: { family: 'Plus Jakarta Sans', size: 10 } }
+              },
+              y: {
+                grid: { color: gridColor },
+                ticks: { color: textColor, font: { family: 'Plus Jakarta Sans' } }
+              }
+            }
+          }
+        });
+      }
+
+      // Chart 2: Comparativo Homens vs Mulheres
+      const ctxComp = document.getElementById('chartComparativo');
+      if (ctxComp) {
+        if (chartComparativoInstance) chartComparativoInstance.destroy();
+
+        const homens = leadersData.filter(d => d.rede === 'Homens');
+        const mulheres = leadersData.filter(d => d.rede === 'Mulheres');
+
+        chartComparativoInstance = new Chart(ctxComp, {
+          type: 'radar',
+          data: {
+            labels: ['Células', 'Vidas / 4', 'Decisões', 'Univ. Vida', 'Batismos'],
+            datasets: [
+              {
+                label: '12 Homens',
+                data: [
+                  homens.reduce((a,b)=>a+(Number(b.celulas)||0), 0),
+                  Math.round(homens.reduce((a,b)=>a+(Number(b.vidas)||0), 0) / 4),
+                  homens.reduce((a,b)=>a+(Number(b.aceitaram)||0), 0),
+                  homens.reduce((a,b)=>a+(Number(b.univVida)||0), 0),
+                  homens.reduce((a,b)=>a+(Number(b.batismo)||0), 0)
+                ],
+                borderColor: '#0284c7',
+                backgroundColor: 'rgba(2, 132, 199, 0.2)',
+                borderWidth: 2
+              },
+              {
+                label: '12 Mulheres',
+                data: [
+                  mulheres.reduce((a,b)=>a+(Number(b.celulas)||0), 0),
+                  Math.round(mulheres.reduce((a,b)=>a+(Number(b.vidas)||0), 0) / 4),
+                  mulheres.reduce((a,b)=>a+(Number(b.aceitaram)||0), 0),
+                  mulheres.reduce((a,b)=>a+(Number(b.univVida)||0), 0),
+                  mulheres.reduce((a,b)=>a+(Number(b.batismo)||0), 0)
+                ],
+                borderColor: '#ec4899',
+                backgroundColor: 'rgba(236, 72, 153, 0.2)',
+                borderWidth: 2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: { color: textColor, font: { family: 'Plus Jakarta Sans', size: 11 } }
+              }
+            },
+            scales: {
+              r: {
+                grid: { color: gridColor },
+                angleLines: { color: gridColor },
+                pointLabels: { color: textColor, font: { size: 10 } },
+                ticks: { display: false }
+              }
+            }
+          }
+        });
+      }
+
+      // Chart 3: Saúde Estrutural
+      const ctxSaude = document.getElementById('chartSaude');
+      if (ctxSaude) {
+        if (chartSaudeInstance) chartSaudeInstance.destroy();
+
+        const countECD = leadersData.filter(d => d.ecd === 'Sim').length;
+        const countDizimos = leadersData.filter(d => d.dizimistas === 'Sim').length;
+        const countOfertas = leadersData.filter(d => d.ofertando.toLowerCase().includes('sim')).length;
+        const countG12 = leadersData.filter(d => d.g12 === 'Sim').length;
+
+        chartSaudeInstance = new Chart(ctxSaude, {
+          type: 'doughnut',
+          data: {
+            labels: [`Líderes ECD (${countECD})`, `Dizimistas (${countDizimos})`, `Células Ofertam (${countOfertas})`, `G12 Semanal (${countG12})`],
+            datasets: [{
+              data: [countECD, countDizimos, countOfertas, countG12],
+              backgroundColor: [
+                '#10B981',
+                '#3B82F6',
+                '#F59E0B',
+                '#8B5CF6'
+              ],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: textColor, font: { family: 'Plus Jakarta Sans', size: 10 }, boxWidth: 12 }
+              }
+            },
+            cutout: '65%'
+          }
+        });
+      }
+
+      renderPlanningCharts();
+    }
+
+    function renderPlanningCharts() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const textColor = isDark ? '#94a3b8' : '#64748b';
+      const gridColor = isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(226, 232, 240, 0.8)';
+
+      // Chart 4: Curva de Expansão 2027
+      const ctxProj = document.getElementById('chartProjecao2027');
+      if (ctxProj) {
+        if (chartProjecao2027Instance) chartProjecao2027Instance.destroy();
+
+        const currentSimCel = parseInt(document.getElementById('sim-res-celulas')?.innerText || '139');
+        const currentSimVidas = parseInt((document.getElementById('sim-res-vidas')?.innerText || '1390').replace('.', ''));
+
+        const targetFinalCel = currentGrowthScenario === 'realista' ? currentSimCel : Math.round(currentSimCel * 1.18);
+        const targetFinalVidas = currentGrowthScenario === 'realista' ? currentSimVidas : Math.round(currentSimVidas * 1.2);
+
+        const celulasData = [91, 99, 115, targetFinalCel];
+        const vidasData = [Math.round(663 / 10), Math.round(790 / 10), Math.round(1020 / 10), Math.round(targetFinalVidas / 10)];
+
+        chartProjecao2027Instance = new Chart(ctxProj, {
+          type: 'line',
+          data: {
+            labels: ['Atual (Set/26)', 'Pós-Multiplicação (Nov/26)', 'Q2 (Jun/27)', 'Q4 (Nov/27)'],
+            datasets: [
+              {
+                label: 'Células Totais',
+                data: celulasData,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                borderWidth: 3,
+                tension: 0.35,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#6366f1'
+              },
+              {
+                label: 'Vidas Ganhas (x10)',
+                data: vidasData,
+                borderColor: '#10b981',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                tension: 0.35,
+                pointRadius: 3,
+                pointBackgroundColor: '#10b981'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: { color: textColor, font: { family: 'Plus Jakarta Sans', size: 10 }, boxWidth: 10 }
+              }
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { color: textColor, font: { size: 10 } }
+              },
+              y: {
+                grid: { color: gridColor },
+                ticks: { color: textColor, font: { size: 10 } }
+              }
+            }
+          }
+        });
+      }
+
+      // Chart 5: Radar de Metas por Rede
+      const ctxRadarMetas = document.getElementById('chartRadarMetas');
+      if (ctxRadarMetas) {
+        if (chartRadarMetasInstance) chartRadarMetasInstance.destroy();
+
+        chartRadarMetasInstance = new Chart(ctxRadarMetas, {
+          type: 'radar',
+          data: {
+            labels: ['Multiplicação', 'Timóteos ECD', 'Batismos', 'Lares Fixos', 'Fidelidade G12'],
+            datasets: [
+              {
+                label: 'Alvo 12 Homens',
+                data: [24, 28, 95, 26, 95],
+                borderColor: '#0284c7',
+                backgroundColor: 'rgba(2, 132, 199, 0.25)',
+                borderWidth: 2,
+                pointBackgroundColor: '#0284c7'
+              },
+              {
+                label: 'Alvo 12 Mulheres',
+                data: [32, 37, 113, 30, 92],
+                borderColor: '#ec4899',
+                backgroundColor: 'rgba(236, 72, 153, 0.25)',
+                borderWidth: 2,
+                pointBackgroundColor: '#ec4899'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: { color: textColor, font: { family: 'Plus Jakarta Sans', size: 10 }, boxWidth: 10 }
+              }
+            },
+            scales: {
+              r: {
+                grid: { color: gridColor },
+                angleLines: { color: gridColor },
+                pointLabels: { color: textColor, font: { size: 9, family: 'Plus Jakarta Sans' } },
+                ticks: { display: false }
+              }
+            }
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
